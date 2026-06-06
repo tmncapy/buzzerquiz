@@ -18,6 +18,7 @@
         .inline-group { display: flex; gap: 10px; margin-bottom: 10px; }
         .timer-banner { font-size: 24px; font-weight: bold; color: #e74c3c; margin: 15px 0; }
         
+        /* KHU VỰC CHẤM ĐIỂM TRẮC NGHIỆM */
         .grading-zone { background: #e8f4f8; padding: 15px; border-radius: 8px; margin: 15px 0; border: 2px dashed #2980b9; display: none; text-align: left; }
         .btn-grade-group { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; margin-bottom: 15px; }
         .btn-g { font-weight: bold; font-size: 18px; padding: 15px; border-radius: 6px; border: none; color: white; cursor: pointer; }
@@ -26,8 +27,11 @@
         .bg-C { background: #2ecc71; } .bg-C:hover { background: #27ae60; }
         .bg-D { background: #f1c40f; } .bg-D:hover { background: #f39c12; }
 
-        /* NÚT SHOW ĐÁP ÁN: Luôn hiện diện, tạo hiệu ứng nhấp nháy chuyển động khi sẵn sàng */
-        .btn-show-display { background: #9b59b6; font-size: 18px; font-weight: bold; padding: 18px; border-radius: 8px; margin-top: 15px; border: none; color: white; width: 100%; cursor: pointer; display: block; animation: pulse 1.5s infinite; }
+        /* KHU VỰC CHẤM ĐIỂM TỰ LUẬN */
+        .short-ans-zone { background: #fef9e7; padding: 15px; border-radius: 8px; margin: 15px 0; border: 2px dashed #f39c12; display: none; text-align: left; }
+
+        /* NÚT SHOW ĐÁP ÁN LÊN ĐỒNG LOẠT */
+        .btn-show-display { background: #9b59b6; font-size: 18px; font-weight: bold; padding: 18px; border-radius: 8px; margin-top: 15px; border: none; color: white; width: 100%; cursor: pointer; animation: pulse 1.5s infinite; }
         .btn-show-display:hover { background: #8e44ad; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(155, 89, 182, 0.6); } 70% { box-shadow: 0 0 0 12px rgba(155, 89, 182, 0); } 100% { box-shadow: 0 0 0 0 rgba(155, 89, 182, 0); } }
 
@@ -44,7 +48,7 @@
         .btn-revive { background: #2ecc71; padding: 6px 12px; font-size: 13px; border-radius: 4px; border: none; color: white; cursor: pointer; width: auto; font-weight: bold; }
         .btn-revive:hover { background: #27ae60; }
 
-        .badge { background: #7f8c8d; color: white; padding: 5px 12px; border-radius: 4px; font-size: 14px; font-weight: bold; }
+        .badge { background: #7f8c8d; color: white; padding: 5px 12px; border-radius: 4px; font-size: 14px; font-weight: bold; word-break: break-all; max-width: 200px; text-align: center; }
         .status-badge { font-size: 12px; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px;}
         .status-lock { background: #e74c3c; color: white; }
         .status-typing { background: #f39c12; color: white; }
@@ -68,30 +72,20 @@
             <label>Loại câu hỏi (Chế độ chơi):</label>
             <select id="input-quiz-type" onchange="toggleControllerSetupFields()">
                 <option value="MCQ">Trắc nghiệm lựa chọn (A, B, C, D)</option>
-                <option value="SHORT_ANS">Trả lời nhanh (Nhập tự do)</option>
+                <option value="SHORT_ANS" selected>Trả lời nhanh (Nhập tự do)</option>
             </select>
             
             <label>Nội dung câu hỏi:</label>
-            <input type="text" id="input-question" value="Thủ đô của Việt Nam là gì?">
+            <input type="text" id="input-question" value="Câu hỏi số 1">
             
-            <div class="inline-group">
-                <div style="flex: 1;">
-                    <label>Đáp án A:</label>
-                    <input type="text" id="ans-A" value="TP. Hồ Chí Minh">
+            <div id="setup-mcq-answers">
+                <div class="inline-group">
+                    <div style="flex: 1;"><label>Đáp án A:</label><input type="text" id="ans-A" value="TP. Hồ Chí Minh"></div>
+                    <div style="flex: 1;"><label>Đáp án B:</label><input type="text" id="ans-B" value="Hà Nội"></div>
                 </div>
-                <div style="flex: 1;">
-                    <label>Đáp án B:</label>
-                    <input type="text" id="ans-B" value="Hà Nội">
-                </div>
-            </div>
-            <div class="inline-group">
-                <div style="flex: 1;">
-                    <label>Đáp án C:</label>
-                    <input type="text" id="ans-C" value="Đà Nẵng">
-                </div>
-                <div style="flex: 1;">
-                    <label>Đáp án D:</label>
-                    <input type="text" id="ans-D" value="Cần Thơ">
+                <div class="inline-group">
+                    <div style="flex: 1;"><label>Đáp án C:</label><input type="text" id="ans-C" value="Đà Nẵng"></div>
+                    <div style="flex: 1;"><label>Đáp án D:</label><input type="text" id="ans-D" value="Cần Thơ"></div>
                 </div>
             </div>
 
@@ -113,13 +107,19 @@
         <div class="grading-zone" id="grading-box">
             <b style="color: #2980b9; font-size: 16px;">📢 BƯỚC 1: CHỌN ĐÁP ÁN ĐÚNG ĐỂ CHẤM ĐIỂM:</b>
             <div class="btn-grade-group">
-                <button class="btn-g bg-A" onclick="submitCorrectAnswer('A')">A</button>
-                <button class="btn-g bg-B" onclick="submitCorrectAnswer('B')">B</button>
-                <button class="btn-g bg-C" onclick="submitCorrectAnswer('C')">C</button>
-                <button class="btn-g bg-D" onclick="submitCorrectAnswer('D')">D</button>
+                <button class="btn-g bg-A" onclick="submitCorrectAnswerMCQ('A')">A</button>
+                <button class="btn-g bg-B" onclick="submitCorrectAnswerMCQ('B')">B</button>
+                <button class="btn-g bg-C" onclick="submitCorrectAnswerMCQ('C')">C</button>
+                <button class="btn-g bg-D" onclick="submitCorrectAnswerMCQ('D')">D</button>
             </div>
-            
-            <button id="btn-show-display" class="btn-show-display" onclick="triggerDisplayAnswer()" disabled>👁️ BƯỚC 2: SHOW ĐÁP ÁN LÊN DISPLAY</button>
+            <button id="btn-show-display-mcq" class="btn-show-display" onclick="triggerDisplayAnswerMCQ()" disabled>👁️ BƯỚC 2: SHOW ĐÁP ÁN LÊN DISPLAY</button>
+        </div>
+
+        <div class="short-ans-zone" id="short-ans-box">
+            <b style="color: #d35400; font-size: 16px;">📢 CÔNG BỐ ĐÁP ÁN CHO CÂU TỰ LUẬN:</b>
+            <label style="display:block; margin-top:8px; font-weight:bold;">Nhập đáp án đúng của ban tổ chức:</label>
+            <input type="text" id="input-correct-short-text" placeholder="Ví dụ: Đông Paris, 100, Việt Nam..." style="margin-top:5px; border: 2px solid #f39c12;">
+            <button id="btn-show-display-short" class="btn-show-display" onclick="triggerDisplayAnswerShort()">👁️ SHOW ĐÁP ÁN TỰ LUẬN LÊN DISPLAY</button>
         </div>
 
         <div class="chart-container" id="controller-chart-box">
@@ -137,15 +137,24 @@
     <script>
         const channel = new BroadcastChannel('quiz_score_engine_channel');
         let playersMap = {}; 
-        let currentMode = 'MCQ'; 
+        let currentMode = 'SHORT_ANS'; 
         let countdownInterval = null;
         let currentMaxDuration = 15;
         let currentMaxScore = 100;
-        let savedCorrectAns = '';
+        let savedCorrectAnsMCQ = '';
+
+        // Chạy kiểm tra ẩn hiện form ngay khi load trang
+        toggleControllerSetupFields();
 
         function toggleControllerSetupFields() {
             const type = document.getElementById('input-quiz-type').value;
-            document.getElementById('controller-chart-box').style.display = (type === 'MCQ') ? 'block' : 'none';
+            if (type === 'MCQ') {
+                document.getElementById('setup-mcq-answers').style.display = 'block';
+                document.getElementById('controller-chart-box').style.display = 'block';
+            } else {
+                document.getElementById('setup-mcq-answers').style.display = 'none';
+                document.getElementById('controller-chart-box').style.display = 'none';
+            }
         }
 
         setInterval(() => { 
@@ -156,22 +165,27 @@
         function startQuiz() {
             clearInterval(countdownInterval);
             
-            // Khi phát câu hỏi mới: Reset nút Show về trạng thái khóa
-            document.getElementById('btn-show-display').disabled = true;
+            // Khóa/Ẩn tất cả các nút điều khiển kết quả trước đó
+            document.getElementById('btn-show-display-mcq').disabled = true;
             document.getElementById('grading-box').style.display = 'none';
-            savedCorrectAns = '';
+            document.getElementById('short-ans-box').style.display = 'none';
+            document.getElementById('input-correct-short-text').value = '';
+            savedCorrectAnsMCQ = '';
 
             currentMode = document.getElementById('input-quiz-type').value;
             const question = document.getElementById('input-question').value;
             currentMaxDuration = parseInt(document.getElementById('input-timer').value) || 15;
             currentMaxScore = parseFloat(document.getElementById('input-question-score').value) || 100;
             
-            let answers = {
-                A: document.getElementById('ans-A').value,
-                B: document.getElementById('ans-B').value,
-                C: document.getElementById('ans-C').value,
-                D: document.getElementById('ans-D').value
-            };
+            let answers = {};
+            if(currentMode === 'MCQ') {
+                answers = {
+                    A: document.getElementById('ans-A').value,
+                    B: document.getElementById('ans-B').value,
+                    C: document.getElementById('ans-C').value,
+                    D: document.getElementById('ans-D').value
+                };
+            }
 
             for (let p in playersMap) { 
                 playersMap[p].answer = 'Chưa trả lời'; 
@@ -188,43 +202,61 @@
             document.getElementById('btn-start-quiz').disabled = true;
             document.getElementById('control-timer').innerText = `⏳ CÒN LẠI: ${timeLeft}s`;
 
+            // Nếu trắc nghiệm, hiện vùng chọn đáp án ngay
             if(currentMode === 'MCQ') { document.getElementById('grading-box').style.display = 'block'; }
 
             countdownInterval = setInterval(() => {
                 timeLeft--;
                 if (timeLeft <= 0) {
-                    clearInterval(countdownInterval);
-                    document.getElementById('control-timer').innerText = "🛑 HẾT GIỜ - ĐÃ KHÓA ĐÁP ÁN!";
-                    document.getElementById('btn-start-quiz').disabled = false;
-                    channel.postMessage({ type: 'TIME_UP', duration: currentMaxDuration });
+                    handleTimeUp();
                 } else {
                     document.getElementById('control-timer').innerText = `⏳ CÒN LẠI: ${timeLeft}s`;
                 }
             }, 1000);
         }
 
-        // Bước 1: Chọn đáp án đúng từ Tech
-        function submitCorrectAnswer(correctKey) {
+        function handleTimeUp() {
             clearInterval(countdownInterval);
-            savedCorrectAns = correctKey;
-            document.getElementById('control-timer').innerText = `🎯 Đã chọn đáp án ${correctKey}. Hãy bấm nút bên dưới để Show!`;
+            document.getElementById('control-timer').innerText = "🛑 HẾT GIỜ - ĐÃ KHÓA ĐÁP ÁN!";
+            document.getElementById('btn-start-quiz').disabled = false;
+            channel.postMessage({ type: 'TIME_UP', duration: currentMaxDuration });
+
+            // Bổ sung: Nếu hết giờ ở câu Tự Luận, kích hoạt bảng nhập đáp án để chuẩn bị Show
+            if(currentMode === 'SHORT_ANS') {
+                document.getElementById('short-ans-box').style.display = 'block';
+            }
+        }
+
+        /* LOGIC XỬ LÝ TRẮC NGHIỆM (MCQ) */
+        function submitCorrectAnswerMCQ(correctKey) {
+            clearInterval(countdownInterval);
+            savedCorrectAnsMCQ = correctKey;
+            document.getElementById('control-timer').innerText = `🎯 Đã chọn đáp án ${correctKey}. Sẵn sàng Show!`;
             document.getElementById('btn-start-quiz').disabled = false;
             
             channel.postMessage({ type: 'TIME_UP', duration: currentMaxDuration });
             channel.postMessage({ type: 'SHOW_RESULT', correctAns: correctKey });
-
-            // MỞ KHÓA nút Show đáp án bước 2 cho Tech bấm
-            document.getElementById('btn-show-display').disabled = false;
+            document.getElementById('btn-show-display-mcq').disabled = false;
         }
 
-        // Bước 2: Bấm nút màu tím để đẩy kết quả lên màn hình trình chiếu
-        function triggerDisplayAnswer() {
-            if(!savedCorrectAns) return;
-            channel.postMessage({ type: 'COMMAND_DISPLAY_REVEAL', correctAns: savedCorrectAns });
-            document.getElementById('control-timer').innerText = `🎉 ĐÃ SHOW ĐÁP ÁN ${savedCorrectAns} LÊN DISPLAY THÀNH CÔNG!`;
-            
-            // Sau khi show thành công, khóa nút lại chờ câu tiếp theo
-            document.getElementById('btn-show-display').disabled = true;
+        function triggerDisplayAnswerMCQ() {
+            if(!savedCorrectAnsMCQ) return;
+            channel.postMessage({ type: 'COMMAND_DISPLAY_REVEAL', correctAns: savedCorrectAnsMCQ });
+            document.getElementById('control-timer').innerText = `🎉 ĐÃ SHOW ĐÁP ÁN TRẮC NGHIỆM LÊN DISPLAY!`;
+            document.getElementById('btn-show-display-mcq').disabled = true;
+        }
+
+        /* LOGIC XỬ LÝ TỰ LUẬN (SHORT ANS) */
+        function triggerDisplayAnswerShort() {
+            const txtCorrect = document.getElementById('input-correct-short-text').value.trim();
+            if(!txtCorrect) {
+                alert("Vui lòng nhập đáp án đúng của câu tự luận trước khi bấm Show!");
+                return;
+            }
+            // Gửi lệnh lật mở màn hình hiển thị lớn kèm theo nội dung chuỗi ký tự đáp án đúng
+            channel.postMessage({ type: 'COMMAND_DISPLAY_REVEAL', correctAns: txtCorrect });
+            document.getElementById('control-timer').innerText = `🎉 ĐÃ SHOW ĐÁP ÁN TỰ LUẬN [${txtCorrect}] LÊN DISPLAY!`;
+            document.getElementById('short-ans-box').style.display = 'none';
         }
 
         function kickPlayer(name) {
@@ -283,7 +315,7 @@
                 const item = document.createElement('div');
                 item.className = `player-item ${p.isEliminated ? 'eliminated-row' : ''}`;
                 let badgeStyle = p.isEliminated ? "background:#c0392b" : (p.answer !== 'Chưa trả lời' ? "background:#2ecc71" : "background:#7f8c8d");
-                let statusIcon = p.isLocked ? `<span class="status-badge status-lock">🔒 Đã Chốt</span>` : `<span class="status-badge status-typing">✍️ Đang chọn...</span>`;
+                let statusIcon = p.isLocked ? `<span class="status-badge status-lock">🔒 Đã Chốt</span>` : `<span class="status-badge status-typing">✍️ Đang nhập...</span>`;
                 if (p.answer === 'Chưa trả lời' || p.isEliminated) statusIcon = '';
 
                 let actionArea = p.isEliminated 

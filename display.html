@@ -10,15 +10,12 @@
         .container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
         .main-panel, .side-panel { background: #2c3e50; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
         h1, h2, h3 { margin-top: 0; text-align: center; color: #ecf0f1; }
-        
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 25px; }
         .stat-box { background: #34495e; padding: 15px; border-radius: 8px; text-align: center; border-bottom: 4px solid #2ecc71; }
         .stat-box.elim { border-color: #e74c3c; }
         .stat-box.total { border-color: #3498db; }
         .stat-num { font-size: 36px; font-weight: bold; margin-top: 5px; }
-
         .question-banner { background: #34495e; padding: 20px; border-radius: 8px; font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 25px; border-left: 8px solid #f1c40f; }
-        
         .chart-box { background: #34495e; padding: 20px; border-radius: 8px; margin-bottom: 25px; }
         .bar-row { display: flex; align-items: center; margin-bottom: 15px; }
         .bar-label { width: 35px; font-weight: bold; font-size: 20px; text-align: center; }
@@ -29,38 +26,30 @@
         .bar-fill-C { background-color: #2ecc71; }
         .bar-fill-D { background-color: #f1c40f; }
         .bar-text { font-size: 18px; font-weight: bold; min-width: 110px; text-align: right; }
-
         .player-monitor-list { display: flex; flex-direction: column; gap: 10px; max-height: 650px; overflow-y: auto; padding-right: 5px; }
-        .p-row { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 6px; background: #34495e; border-left: 5px solid #7f8c8d; transition: 0.3s; background-size: cover; background-position: center; position: relative; }
+        .p-row { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 6px; background: #34495e; border-left: 5px solid #7f8c8d; transition: 0.3s; }
         .p-row.state-playing { border-left-color: #2ecc71; }
-        .p-row.state-eliminated { border-left-color: #e74c3c; opacity: 0.3; background: #243342; }
+        .p-row.state-eliminated { border-left-color: #e74c3c; opacity: 0.3; background: #243342 !important; }
         .p-name { font-weight: bold; font-size: 18px; display: flex; align-items: center; gap: 8px; }
         .p-status-tag { font-size: 12px; padding: 2px 6px; border-radius: 4px; font-weight: bold; text-transform: uppercase; }
         .tag-live { background: #2ecc71; color: #fff; }
         .tag-dead { background: #e74c3c; color: #fff; }
-        
-        .p-ans-badge { font-weight: bold; font-size: 18px; background: #3498db; padding: 4px 12px; border-radius: 20px; min-width: 40px; text-align: center; }
+        .p-ans-badge { font-weight: bold; font-size: 18px; background: #3498db; padding: 4px 12px; border-radius: 20px; min-width: 40px; text-align: center; color: white; }
         .p-ans-badge.not-yet { background: #7f8c8d; font-size: 14px; }
         .p-ans-badge.locked { background: #e67e22; border: 1px solid #fff; }
-        
-        /* Style mờ các dòng trả lời sai khi công bố kết quả */
-        .p-row.fade-out { opacity: 0.2; transform: scale(0.98); }
+        .p-row.fade-out { opacity: 0.4; }
     </style>
 </head>
 <body>
-
     <h1 style="font-size: 32px; margin-bottom: 20px;">🏟️ LIVE SCREEN - ĐẤU TRƯỜNG QUIZ</h1>
-    
     <div class="container">
         <div class="main-panel">
             <div class="stats-grid">
                 <div class="stat-box total"><div>Tổng số Player</div><div class="stat-num" id="view-total">0</div></div>
-                <div class="stat-box"><div>Trên sàn đấu (Còn lại)</div><div class="stat-num" id="view-live" style="color: #2ecc71;">0</div></div>
+                <div class="stat-box"><div>Trên sàn đấu</div><div class="stat-num" id="view-live" style="color: #2ecc71;">0</div></div>
                 <div class="stat-box elim"><div>Đã bị loại</div><div class="stat-num" id="view-dead" style="color: #e74c3c;">0</div></div>
             </div>
-
             <div class="question-banner" id="view-question">Đang đợi Tech phát câu hỏi tiếp theo...</div>
-
             <div class="chart-box" id="view-chart-area">
                 <h3 style="text-align: left; margin-bottom: 15px;" id="chart-title">📊 Tỉ lệ chọn phương án (Thời gian thực):</h3>
                 <div class="bar-row"><span class="bar-label" style="color:#e74c3c">A</span><div class="bar-wrapper"><div id="v-bar-A" class="bar-fill bar-fill-A"></div></div><span id="v-txt-A" class="bar-text">0% (0)</span></div>
@@ -69,9 +58,8 @@
                 <div class="bar-row"><span class="bar-label" style="color:#f1c40f">D</span><div class="bar-wrapper"><div id="v-bar-D" class="bar-fill bar-fill-D"></div></div><span id="v-txt-D" class="bar-text">0% (0)</span></div>
             </div>
         </div>
-
         <div class="side-panel">
-            <h2 id="panel-right-title">SÀN ĐẤU CHI TIẾT</h2>
+            <h2>SÀN ĐẤU CHI TIẾT</h2>
             <div class="player-monitor-list" id="view-players-list">
                 <p style="text-align: center; color: #bbb; font-style: italic;">Chưa có người chơi tham gia...</p>
             </div>
@@ -82,97 +70,73 @@
         const channel = new BroadcastChannel('quiz_score_engine_channel');
         let dPlayersMap = {};
         let currentMode = 'MCQ';
-        let isResultRevealed = false; // Trạng thái đã ấn lật mở đáp án chưa
+        let isResultRevealed = false; 
         let globalCorrectAns = '';
 
         channel.onmessage = (event) => {
             const data = event.data;
-
             if (data.type === 'START_QUIZ') {
                 currentMode = data.mode;
                 isResultRevealed = false; 
                 globalCorrectAns = '';
                 document.getElementById('view-question').innerText = `❓ ${data.question}`;
                 document.getElementById('chart-title').innerText = "📊 Tỉ lệ chọn phương án (Thời gian thực):";
-                
                 if(currentMode === 'MCQ') {
                     document.getElementById('view-chart-area').style.display = 'block';
                 } else {
                     document.getElementById('view-chart-area').style.display = 'none';
                 }
-                
-                for(let p in dPlayersMap) {
-                    dPlayersMap[p].answer = 'Chưa trả lời';
-                    dPlayersMap[p].isLocked = false;
-                }
                 renderDisplayUI();
             } 
             else if (data.type === 'SYNC_DISPLAY_DATA') {
-                // Nếu chưa lật mở đáp án thì liên tục cập nhật dữ liệu thời gian thực từ Tech
                 if (!isResultRevealed) {
                     dPlayersMap = data.players;
                     renderDisplayUI();
                 }
             }
-            // LOGIC KHI NHẬN LỆNH LẬT MỞ ĐÁP ÁN TỪ TECH BUTTON
             else if (data.type === 'COMMAND_DISPLAY_REVEAL') {
                 isResultRevealed = true;
                 globalCorrectAns = data.correctAns;
                 document.getElementById('chart-title').innerText = `🎉 ĐÁP ÁN CHÍNH XÁC LÀ: ${globalCorrectAns}`;
-                renderDisplayUI(); // Render lại lần cuối kèm hiệu ứng hình ảnh
+                renderDisplayUI(); 
             }
         };
 
         function renderDisplayUI() {
             const listContainer = document.getElementById('view-players-list');
             listContainer.innerHTML = '';
-
             let total = 0; let live = 0; let dead = 0;
             let counts = { A: 0, B: 0, C: 0, D: 0 };
 
             for(let name in dPlayersMap) {
                 total++;
                 const p = dPlayersMap[name];
-                
-                if (p.isEliminated) {
-                    dead++;
-                } else {
+                if (p.isEliminated) { dead++; } else {
                     live++;
-                    if(currentMode === 'MCQ' && counts[p.answer] !== undefined) {
-                        counts[p.answer]++;
-                    }
+                    if(currentMode === 'MCQ' && counts[p.answer] !== undefined) counts[p.answer]++;
                 }
 
                 const row = document.createElement('div');
                 row.className = `p-row ${p.isEliminated ? 'state-eliminated' : 'state-playing'}`;
-
                 let statusTag = p.isEliminated ? `<span class="p-status-tag tag-dead">☠️ Bị Loại</span>` : `<span class="p-status-tag tag-live">🟢 Đang Đấu</span>`;
-                
                 let ansBadge = '';
                 
                 if (!p.isEliminated) {
                     if (p.answer === 'Chưa trả lời') {
                         ansBadge = `<span class="p-ans-badge not-yet">...</span>`;
                     } else {
-                        // Nếu CHƯA BẤM SHOW: Ẩn đáp án thật bằng dấu hỏi hoặc chữ "Đã Chốt" để giữ bí mật
                         if (!isResultRevealed) {
-                            let displayText = p.isLocked ? "🔒" : "✍️";
-                            ansBadge = `<span class="p-ans-badge locked">${displayText}</span>`;
+                            ansBadge = `<span class="p-ans-badge locked">${p.isLocked ? "🔒" : "✍️"}</span>`;
                         } else {
-                            // Nếu ĐÃ BẤM SHOW: Hiện hẳn chữ đáp án người đó chọn (A, B, C, D)
-                            ansBadge = `<span class="p-ans-badge">${p.answer}</span>`;
+                            ansBadge = `<span class="p-ans-badge" style="background:#2ced6c; color:#111">${p.answer}</span>`;
                         }
                     }
 
-                    // HIỆU ỨNG PHỦ FILE ẢNH KHI TECH BẤM NÚT SHOW ĐÁP ÁN
                     if (isResultRevealed && currentMode === 'MCQ') {
                         if (p.answer === globalCorrectAns) {
-                            // Trả lời ĐÚNG -> Fill bằng trulefalserightstrap.png
-                            row.style.backgroundImage = "url('trulefalserightstrap.png')";
-                            row.style.color = "white";
+                            row.style.backgroundColor = "#27ae60"; // ĐÚNG ĐỔI NỀN XANH LÁ
                         } else {
-                            // Trả lời SAI -> Fill bằng truefalsewrongstrap.png và làm mờ hàng đi
-                            row.style.backgroundImage = "url('truefalsewrongstrap.png')";
+                            row.style.backgroundColor = "#c0392b"; // SAI ĐỔI NỀN ĐỎ
                             row.classList.add('fade-out');
                         }
                     }
@@ -180,15 +144,9 @@
                     ansBadge = `<span class="p-ans-badge not-yet" style="background:#e74c3c">X</span>`;
                 }
 
-                row.innerHTML = `
-                    <div class="p-name">
-                        <span>👤 ${name}</span> ${statusTag}
-                    </div>
-                    ${ansBadge}
-                `;
+                row.innerHTML = `<div class="p-name"><span>👤 ${name}</span> ${statusTag}</div>${ansBadge}`;
                 listContainer.appendChild(row);
             }
-
             document.getElementById('view-total').innerText = total;
             document.getElementById('view-live').innerText = live;
             document.getElementById('view-dead').innerText = dead;

@@ -11,7 +11,7 @@
         h2 { color: #333; margin-bottom: 20px; }
         button { background: #27ae60; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 8px; cursor: pointer; transition: 0.3s; width: 100%; font-weight: bold; }
         button:hover { background: #219653; }
-        button:disabled { background: #ccc; cursor: not-allowed; opacity: 0.6; }
+        button:disabled { background: #ccc !important; cursor: not-allowed !important; opacity: 0.6 !important; animation: none !important; box-shadow: none !important; }
         input, select { padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 10px; width: 100%; }
         .quiz-setup { text-align: left; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
         .quiz-setup label { font-weight: bold; display: block; margin-top: 8px; color: #555; }
@@ -26,9 +26,10 @@
         .bg-C { background: #2ecc71; } .bg-C:hover { background: #27ae60; }
         .bg-D { background: #f1c40f; } .bg-D:hover { background: #f39c12; }
 
-        .btn-show-display { background: #9b59b6; font-size: 18px; font-weight: bold; padding: 15px; border-radius: 8px; display: none; margin-top: 10px; animation: pulse 1.5s infinite; border: none; color: white; width: 100%; cursor: pointer; }
+        /* NÚT SHOW ĐÁP ÁN: Luôn hiện diện, tạo hiệu ứng nhấp nháy chuyển động khi sẵn sàng */
+        .btn-show-display { background: #9b59b6; font-size: 18px; font-weight: bold; padding: 18px; border-radius: 8px; margin-top: 15px; border: none; color: white; width: 100%; cursor: pointer; display: block; animation: pulse 1.5s infinite; }
         .btn-show-display:hover { background: #8e44ad; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(155, 89, 182, 0.5); } 70% { box-shadow: 0 0 0 10px rgba(155, 89, 182, 0); } 100% { box-shadow: 0 0 0 0 rgba(155, 89, 182, 0); } }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(155, 89, 182, 0.6); } 70% { box-shadow: 0 0 0 12px rgba(155, 89, 182, 0); } 100% { box-shadow: 0 0 0 0 rgba(155, 89, 182, 0); } }
 
         .player-list { text-align: left; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px; max-height: 350px; overflow-y: auto; }
         .player-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #ddd; }
@@ -118,7 +119,7 @@
                 <button class="btn-g bg-D" onclick="submitCorrectAnswer('D')">D</button>
             </div>
             
-            <button id="btn-show-display" class="btn-show-display" onclick="triggerDisplayAnswer()">👁️ BƯỚC 2: SHOW ĐÁP ÁN LÊN DISPLAY</button>
+            <button id="btn-show-display" class="btn-show-display" onclick="triggerDisplayAnswer()" disabled>👁️ BƯỚC 2: SHOW ĐÁP ÁN LÊN DISPLAY</button>
         </div>
 
         <div class="chart-container" id="controller-chart-box">
@@ -154,8 +155,10 @@
 
         function startQuiz() {
             clearInterval(countdownInterval);
+            
+            // Khi phát câu hỏi mới: Reset nút Show về trạng thái khóa
+            document.getElementById('btn-show-display').disabled = true;
             document.getElementById('grading-box').style.display = 'none';
-            document.getElementById('btn-show-display').style.display = 'none';
             savedCorrectAns = '';
 
             currentMode = document.getElementById('input-quiz-type').value;
@@ -200,23 +203,28 @@
             }, 1000);
         }
 
+        // Bước 1: Chọn đáp án đúng từ Tech
         function submitCorrectAnswer(correctKey) {
             clearInterval(countdownInterval);
             savedCorrectAns = correctKey;
-            document.getElementById('control-timer').innerText = `🎯 Đã chấm xong: Chọn ${correctKey}. Sẵn sàng Show!`;
+            document.getElementById('control-timer').innerText = `🎯 Đã chọn đáp án ${correctKey}. Hãy bấm nút bên dưới để Show!`;
             document.getElementById('btn-start-quiz').disabled = false;
             
             channel.postMessage({ type: 'TIME_UP', duration: currentMaxDuration });
             channel.postMessage({ type: 'SHOW_RESULT', correctAns: correctKey });
 
-            document.getElementById('btn-show-display').style.display = 'block';
+            // MỞ KHÓA nút Show đáp án bước 2 cho Tech bấm
+            document.getElementById('btn-show-display').disabled = false;
         }
 
+        // Bước 2: Bấm nút màu tím để đẩy kết quả lên màn hình trình chiếu
         function triggerDisplayAnswer() {
             if(!savedCorrectAns) return;
             channel.postMessage({ type: 'COMMAND_DISPLAY_REVEAL', correctAns: savedCorrectAns });
-            document.getElementById('control-timer').innerText = `🎉 ĐÃ SHOW ĐÁP ÁN ${savedCorrectAns} LÊN DISPLAY!`;
-            document.getElementById('btn-show-display').style.display = 'none';
+            document.getElementById('control-timer').innerText = `🎉 ĐÃ SHOW ĐÁP ÁN ${savedCorrectAns} LÊN DISPLAY THÀNH CÔNG!`;
+            
+            // Sau khi show thành công, khóa nút lại chờ câu tiếp theo
+            document.getElementById('btn-show-display').disabled = true;
         }
 
         function kickPlayer(name) {

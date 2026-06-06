@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bản điều khiển - Controller Admin</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 750px; text-align: center; }
+        h2 { color: #333; margin-bottom: 20px; }
+        button { background: #27ae60; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 8px; cursor: pointer; transition: 0.3s; width: 100%; }
+        button:hover { background: #219653; }
+        button:disabled { background: #ccc; cursor: not-allowed; opacity: 0.6; }
+        input, select { padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 10px; width: 100%; }
+        
+        .quiz-setup { text-align: left; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .quiz-setup label { font-weight: bold; display: block; margin-top: 8px; color: #555; }
+        .inline-group { display: flex; gap: 10px; }
+
+        .timer-banner { font-size: 24px; font-weight: bold; color: #e74c3c; margin: 10px 0; }
+        .player-list { text-align: left; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px; max-height: 250px; overflow-y: auto; }
+        .player-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #ddd; }
+        .player-info { display: flex; flex-direction: column; }
+        .player-name-text { font-weight: bold; font-size: 16px; }
+        .time-elapsed { font-size: 12px; color: #2980b9; font-weight: bold; margin-top: 2px; }
+        .score-hint { font-size: 12px; color: #27ae60; font-weight: bold; margin-top: 1px; }
+        .badge { background: #2ecc71; color: white; padding: 4px 10px; border-radius: 4px; font-size: 14px; max-width: 50%; word-break: break-all; }
+        .status-badge { font-size: 12px; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px;}
+        .status-lock { background: #e74c3c; color: white; }
+        .status-typing { background: #f39c12; color: white; }
+
+        .chart-container { margin-top: 25px; text-align: left; background: #fff; padding: 15px; border: 1px solid #e1e4e8; border-radius: 8px; }
+        .bar-row { display: flex; align-items: center; margin-bottom: 10px; }
+        .bar-label { width: 25px; font-weight: bold; font-size: 16px; }
+        .bar-wrapper { flex-grow: 1; background-color: #e0e0e0; height: 24px; border-radius: 12px; overflow: hidden; position: relative; margin: 0 10px; }
+        .bar-fill { height: 100%; width: 0%; transition: width 0.3s ease; }
+        .bar-fill-A { background-color: #e74c3c; }
+        .bar-fill-B { background-color: #3498db; }
+        .bar-fill-C { background-color: #2ecc71; }
+        .bar-fill-D { background-color: #f1c40f; }
+        .bar-text { font-size: 14px; font-weight: bold; min-width: 90px; text-align: right; color: #333; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>BẢN ĐIỀU KHIỂN (CONTROLLER)</h2>
+        
+        <div class="quiz-setup">
+            <label>Loại câu hỏi (Chế độ chơi):</label>
+            <select id="input-quiz-type" onchange="toggleControllerSetupFields()">
+                <option value="MCQ">Trắc nghiệm lựa chọn (A, B, C, D)</option>
+                <option value="SHORT_ANS">Trả lời nhanh (Nhập văn bản tự do)</option>
+            </select>
+
+            <label>Nội dung câu hỏi:</label>
+            <input type="text" id="input-question" value="Thủ đô của Việt Nam là gì?">
+            
+            <div id="setup-mcq-fields">
+                <div class="inline-group">
+                    <div><label>Đáp án A:</label><input type="text" id="input-A" value="TP. Hồ Chí Minh"></div>
+                    <div><label>Đáp án B:</label><input type="text" id="input-B" value="Hà Nội"></div>
+                </div>
+                <div class="inline-group">
+                    <div><label>Đáp án C:</label><input type="text" id="input-C" value="Đà Nẵng"></div>
+                    <div><label>Đáp án D:</label><input type="text" id="input-D" value="Cần Thơ"></div>
+                </div>
+            </div>
+
+            <div class="inline-group">
+                <div>
+                    <label>Thời gian trả lời (giây):</label>
+                    <input type="number" id="input-timer" value="15" min="5" style="width: 120px;">
+                </div>
+                <div style="flex-grow: 1;">
+                    <label>Số điểm tối đa của câu này:</label>
+                    <input type="number" id="input-question-score" value="100" min="1" style="width: 100%;">
+                </div>
+            </div>
+        </div>
+
+        <button id="btn-start-quiz" onclick="startQuiz()">▶ PHÁT ĐỀ & BẮT ĐẦU TÍNH GIỜ</button>
+        
+        <div class="timer-banner" id="control-timer">Thời gian câu hỏi: --</div>
+
+        <div class="chart-container" id="controller-chart-box">
+            <div style="font-weight: bold; text-align: center; margin-bottom: 5px;">Thống kê % Trắc nghiệm</div>
+            <div class="bar-row"><span class="bar-label" style="color:#e74c3c">A</span><div class="bar-wrapper"><div id="bar-A" class="bar-fill bar-fill-A"></div></div><span id="text-A" class="bar-text">0% (0)</span></div>
+            <div class="bar-row"><span class="bar-label" style="color:#3498db">B</span><div class="bar-wrapper"><div id="bar-B" class="bar-fill bar-fill-B"></div></div><span id="text-B" class="bar-text">0% (0)</span></div>
+            <div class="bar-row"><span class="bar-label" style="color:#2ecc71">C</span><div class="bar-wrapper"><div id="bar-C" class="bar-fill bar-fill-C"></div></div><span id="text-C" class="bar-text">0% (0)</span></div>
+            <div class="bar-row"><span class="bar-label" style="color:#f1c40f">D</span><div class="bar-wrapper"><div id="bar-D" class="bar-fill bar-fill-D"></div></div><span id="text-D" class="bar-text">0% (0)</span></div>
+        </div>
+
+        <h3>Danh sách câu trả lời từ Player (<span id="player-count">0</span>)</h3>
+        <div class="player-list" id="players-display"></div>
+    </div>
+
+    <script>
+        const channel = new BroadcastChannel('quiz_score_engine_channel');
+        let playersMap = {}; 
+        let currentMode = 'MCQ'; 
+        let countdownInterval = null;
+        let currentMaxDuration = 15;
+        let currentMaxScore = 100;
+
+        // Tự động kích hoạt khi mở trang
+        toggleControllerSetupFields();
+        setInterval(() => { channel.postMessage({ type: 'CONTROLLER_PING' }); }, 1000);
+
+        function toggleControllerSetupFields() {
+            const type = document.getElementById('input-quiz-type').value;
+            if (type === 'MCQ') {
+                document.getElementById('setup-mcq-fields').style.display = 'block';
+                document.getElementById('controller-chart-box').style.display = 'block';
+            } else {
+                document.getElementById('setup-mcq-fields').style.display = 'none';
+                document.getElementById('controller-chart-box').style.display = 'none';
+            }
+        }
+
+        function startQuiz() {
+            clearInterval(countdownInterval);
+            currentMode = document.getElementById('input-quiz-type').value;
+            const question = document.getElementById('input-question').value;
+            currentMaxDuration = parseInt(document.getElementById('input-timer').value) || 15;
+            currentMaxScore = parseFloat(document.getElementById('input-question-score').value) || 100;
+            
+            let answers = {};
+            if (currentMode === 'MCQ') {
+                answers = {
+                    A: document.getElementById('input-A').value,
+                    B: document.getElementById('input-B').value,
+                    C: document.getElementById('input-C').value,
+                    D: document.getElementById('input-D').value,
+                };
+            }
+
+            for (let p in playersMap) { 
+                playersMap[p].answer = 'Chưa trả lời'; 
+                playersMap[p].isLocked = false;
+                playersMap[p].timeTaken = null;
+                playersMap[p].calculatedScore = 0;
+            }
+            updateControllerUI();
+
+            const timestamp = performance.now();
+            channel.postMessage({ type: 'START_QUIZ', mode: currentMode, question, answers, duration: currentMaxDuration, timestamp });
+
+            let timeLeft = currentMaxDuration;
+            document.getElementById('btn-start-quiz').disabled = true;
+            document.getElementById('control-timer').innerText = `⏳ CÒN LẠI: ${timeLeft}s`;
+
+            countdownInterval = setInterval(() => {
+                timeLeft--;
+                if (timeLeft <= 0) {
+                    clearInterval(countdownInterval);
+                    document.getElementById('control-timer').innerText = "🛑 HẾT GIỜ - ĐÃ KHÓA ĐÁP ÁN!";
+                    document.getElementById('btn-start-quiz').disabled = false;
+                    channel.postMessage({ type: 'TIME_UP', duration: currentMaxDuration });
+                } else {
+                    document.getElementById('control-timer').innerText = `⏳ CÒN LẠI: ${timeLeft}s`;
+                }
+            }, 1000);
+        }
+
+        channel.onmessage = (event) => {
+            const data = event.data;
+            if (data.type === 'PLAYER_JOIN') {
+                if (!playersMap[data.name]) {
+                    playersMap[data.name] = { answer: 'Chưa trả lời', isLocked: false, timeTaken: null, calculatedScore: 0 };
+                    updateControllerUI();
+                }
+            } else if (data.type === 'PLAYER_SUBMIT') {
+                if (playersMap[data.name]) {
+                    playersMap[data.name].answer = data.answer; 
+                    playersMap[data.name].isLocked = data.isLocked;
+                    playersMap[data.name].timeTaken = data.timeTaken; 
+                    
+                    if(data.isLocked && data.timeTaken !== null) {
+                        let ratio = 1 - (parseFloat(data.timeTaken) / currentMaxDuration);
+                        if (ratio < 0) ratio = 0; 
+                        let score = ratio * currentMaxScore;
+                        playersMap[data.name].calculatedScore = score.toFixed(2);
+                    } else {
+                        playersMap[data.name].calculatedScore = 0;
+                    }
+                    updateControllerUI();
+                }
+            }
+        };
+
+        function updateControllerUI() {
+            const listContainer = document.getElementById('players-display');
+            listContainer.innerHTML = '';
+            let totalPlayers = 0;
+            let counts = { A: 0, B: 0, C: 0, D: 0 };
+
+            for (let name in playersMap) {
+                totalPlayers++;
+                const ans = playersMap[name].answer;
+                const isLock = playersMap[name].isLocked;
+                const timeTaken = playersMap[name].timeTaken;
+                const score = playersMap[name].calculatedScore;
+
+                if(currentMode === 'MCQ' && counts[ans] !== undefined) { counts[ans]++; }
+
+                const item = document.createElement('div');
+                item.className = 'player-item';
+                
+                let badgeStyle = "background:#7f8c8d";
+                if (ans !== 'Chưa trả lời') { badgeStyle = currentMode === 'MCQ' ? "background:#2ecc71" : "background:#9b59b6"; }
+                
+                let statusIcon = isLock ? `<span class="status-badge status-lock">🔒 Đã Chốt</span>` : `<span class="status-badge status-typing">✍️ Đang nhập...</span>`;
+                if (ans === 'Chưa trả lời') statusIcon = '';
+
+                let timeText = ''; let scoreText = '';
+                if (ans !== 'Chưa trả lời') {
+                    if (isLock && timeTaken !== null) {
+                        timeText = `<span class="time-elapsed">⏱️ Phản hồi: ${timeTaken} giây</span>`;
+                        scoreText = `<span class="score-hint">🎯 Điểm dự kiến: ${score}đ / ${currentMaxScore}đ</span>`;
+                    } else { timeText = `<span class="time-elapsed" style="color:#aaa">⏱️ Đang tính giờ...</span>`; }
+                }
+
+                item.innerHTML = `
+                    <div class="player-info">
+                        <span class="player-name-text">👤 ${name} ${statusIcon}</span>
+                        ${timeText} ${scoreText}
+                    </div>
+                    <span class="badge" style="${badgeStyle}">${ans}</span>
+                `;
+                listContainer.appendChild(item);
+            }
+            document.getElementById('player-count').innerText = totalPlayers;
+
+            if (currentMode === 'MCQ') {
+                let totalAnswered = counts.A + counts.B + counts.C + counts.D;
+                ['A', 'B', 'C', 'D'].forEach(option => {
+                    let count = counts[option];
+                    let percent = totalAnswered > 0 ? Math.round((count / totalAnswered) * 100) : 0;
+                    document.getElementById(`bar-${option}`).style.width = `${percent}%`;
+                    document.getElementById(`text-${option}`).innerText = `${percent}% (${count} lượt)`;
+                });
+            }
+        }
+    </script>
+</body>
+</html>

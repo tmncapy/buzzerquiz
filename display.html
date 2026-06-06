@@ -19,7 +19,6 @@
 
         .question-banner { background: #34495e; padding: 20px; border-radius: 8px; font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 25px; border-left: 8px solid #f1c40f; }
         
-        /* Bảng thống kê trắc nghiệm lớn */
         .chart-box { background: #34495e; padding: 20px; border-radius: 8px; margin-bottom: 25px; }
         .bar-row { display: flex; align-items: center; margin-bottom: 15px; }
         .bar-label { width: 35px; font-weight: bold; font-size: 20px; text-align: center; }
@@ -31,19 +30,21 @@
         .bar-fill-D { background-color: #f1c40f; }
         .bar-text { font-size: 18px; font-weight: bold; min-width: 110px; text-align: right; }
 
-        /* Danh sách đấu thủ bên cánh phải */
         .player-monitor-list { display: flex; flex-direction: column; gap: 10px; max-height: 650px; overflow-y: auto; padding-right: 5px; }
-        .p-row { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 6px; background: #34495e; border-left: 5px solid #7f8c8d; transition: 0.3s; }
+        .p-row { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 6px; background: #34495e; border-left: 5px solid #7f8c8d; transition: 0.3s; background-size: cover; background-position: center; position: relative; }
         .p-row.state-playing { border-left-color: #2ecc71; }
-        .p-row.state-eliminated { border-left-color: #e74c3c; opacity: 0.4; background: #243342; }
+        .p-row.state-eliminated { border-left-color: #e74c3c; opacity: 0.3; background: #243342; }
         .p-name { font-weight: bold; font-size: 18px; display: flex; align-items: center; gap: 8px; }
         .p-status-tag { font-size: 12px; padding: 2px 6px; border-radius: 4px; font-weight: bold; text-transform: uppercase; }
         .tag-live { background: #2ecc71; color: #fff; }
         .tag-dead { background: #e74c3c; color: #fff; }
         
-        .p-ans-badge { font-weight: bold; font-size: 18px; background: #1abc9c; padding: 4px 12px; border-radius: 20px; min-width: 40px; text-align: center; }
+        .p-ans-badge { font-weight: bold; font-size: 18px; background: #3498db; padding: 4px 12px; border-radius: 20px; min-width: 40px; text-align: center; }
         .p-ans-badge.not-yet { background: #7f8c8d; font-size: 14px; }
-        .p-ans-badge.locked { box-shadow: 0 0 8px #fff; border: 2px solid #fff; }
+        .p-ans-badge.locked { background: #e67e22; border: 1px solid #fff; }
+        
+        /* Style mờ các dòng trả lời sai khi công bố kết quả */
+        .p-row.fade-out { opacity: 0.2; transform: scale(0.98); }
     </style>
 </head>
 <body>
@@ -61,7 +62,7 @@
             <div class="question-banner" id="view-question">Đang đợi Tech phát câu hỏi tiếp theo...</div>
 
             <div class="chart-box" id="view-chart-area">
-                <h3 style="text-align: left; margin-bottom: 15px;">📊 Tỉ lệ chọn phương án (Chỉ tính người còn trên sàn):</h3>
+                <h3 style="text-align: left; margin-bottom: 15px;" id="chart-title">📊 Tỉ lệ chọn phương án (Thời gian thực):</h3>
                 <div class="bar-row"><span class="bar-label" style="color:#e74c3c">A</span><div class="bar-wrapper"><div id="v-bar-A" class="bar-fill bar-fill-A"></div></div><span id="v-txt-A" class="bar-text">0% (0)</span></div>
                 <div class="bar-row"><span class="bar-label" style="color:#3498db">B</span><div class="bar-wrapper"><div id="v-bar-B" class="bar-fill bar-fill-B"></div></div><span id="v-txt-B" class="bar-text">0% (0)</span></div>
                 <div class="bar-row"><span class="bar-label" style="color:#2ecc71">C</span><div class="bar-wrapper"><div id="v-bar-C" class="bar-fill bar-fill-C"></div></div><span id="v-txt-C" class="bar-text">0% (0)</span></div>
@@ -70,7 +71,7 @@
         </div>
 
         <div class="side-panel">
-            <h2>SÀN ĐẤU CHI TIẾT</h2>
+            <h2 id="panel-right-title">SÀN ĐẤU CHI TIẾT</h2>
             <div class="player-monitor-list" id="view-players-list">
                 <p style="text-align: center; color: #bbb; font-style: italic;">Chưa có người chơi tham gia...</p>
             </div>
@@ -81,20 +82,25 @@
         const channel = new BroadcastChannel('quiz_score_engine_channel');
         let dPlayersMap = {};
         let currentMode = 'MCQ';
+        let isResultRevealed = false; // Trạng thái đã ấn lật mở đáp án chưa
+        let globalCorrectAns = '';
 
-        // Lắng nghe dữ liệu đồng bộ từ Tech
         channel.onmessage = (event) => {
             const data = event.data;
 
             if (data.type === 'START_QUIZ') {
                 currentMode = data.mode;
+                isResultRevealed = false; 
+                globalCorrectAns = '';
                 document.getElementById('view-question').innerText = `❓ ${data.question}`;
+                document.getElementById('chart-title').innerText = "📊 Tỉ lệ chọn phương án (Thời gian thực):";
+                
                 if(currentMode === 'MCQ') {
                     document.getElementById('view-chart-area').style.display = 'block';
                 } else {
                     document.getElementById('view-chart-area').style.display = 'none';
                 }
-                // Reset đáp án hiển thị của mọi người về mặc định cho câu mới
+                
                 for(let p in dPlayersMap) {
                     dPlayersMap[p].answer = 'Chưa trả lời';
                     dPlayersMap[p].isLocked = false;
@@ -102,9 +108,18 @@
                 renderDisplayUI();
             } 
             else if (data.type === 'SYNC_DISPLAY_DATA') {
-                // Nhận bản sao data chuẩn từ Tech gửi qua định kỳ
-                dPlayersMap = data.players;
-                renderDisplayUI();
+                // Nếu chưa lật mở đáp án thì liên tục cập nhật dữ liệu thời gian thực từ Tech
+                if (!isResultRevealed) {
+                    dPlayersMap = data.players;
+                    renderDisplayUI();
+                }
+            }
+            // LOGIC KHI NHẬN LỆNH LẬT MỞ ĐÁP ÁN TỪ TECH BUTTON
+            else if (data.type === 'COMMAND_DISPLAY_REVEAL') {
+                isResultRevealed = true;
+                globalCorrectAns = data.correctAns;
+                document.getElementById('chart-title').innerText = `🎉 ĐÁP ÁN CHÍNH XÁC LÀ: ${globalCorrectAns}`;
+                renderDisplayUI(); // Render lại lần cuối kèm hiệu ứng hình ảnh
             }
         };
 
@@ -128,19 +143,38 @@
                     }
                 }
 
-                // Thiết kế dòng hiển thị người chơi
                 const row = document.createElement('div');
                 row.className = `p-row ${p.isEliminated ? 'state-eliminated' : 'state-playing'}`;
 
                 let statusTag = p.isEliminated ? `<span class="p-status-tag tag-dead">☠️ Bị Loại</span>` : `<span class="p-status-tag tag-live">🟢 Đang Đấu</span>`;
                 
                 let ansBadge = '';
+                
                 if (!p.isEliminated) {
                     if (p.answer === 'Chưa trả lời') {
                         ansBadge = `<span class="p-ans-badge not-yet">...</span>`;
                     } else {
-                        let lockClass = p.isLocked ? 'locked' : '';
-                        ansBadge = `<span class="p-ans-badge ${lockClass}">${p.answer}</span>`;
+                        // Nếu CHƯA BẤM SHOW: Ẩn đáp án thật bằng dấu hỏi hoặc chữ "Đã Chốt" để giữ bí mật
+                        if (!isResultRevealed) {
+                            let displayText = p.isLocked ? "🔒" : "✍️";
+                            ansBadge = `<span class="p-ans-badge locked">${displayText}</span>`;
+                        } else {
+                            // Nếu ĐÃ BẤM SHOW: Hiện hẳn chữ đáp án người đó chọn (A, B, C, D)
+                            ansBadge = `<span class="p-ans-badge">${p.answer}</span>`;
+                        }
+                    }
+
+                    // HIỆU ỨNG PHỦ FILE ẢNH KHI TECH BẤM NÚT SHOW ĐÁP ÁN
+                    if (isResultRevealed && currentMode === 'MCQ') {
+                        if (p.answer === globalCorrectAns) {
+                            // Trả lời ĐÚNG -> Fill bằng trulefalserightstrap.png
+                            row.style.backgroundImage = "url('trulefalserightstrap.png')";
+                            row.style.color = "white";
+                        } else {
+                            // Trả lời SAI -> Fill bằng truefalsewrongstrap.png và làm mờ hàng đi
+                            row.style.backgroundImage = "url('truefalsewrongstrap.png')";
+                            row.classList.add('fade-out');
+                        }
                     }
                 } else {
                     ansBadge = `<span class="p-ans-badge not-yet" style="background:#e74c3c">X</span>`;
@@ -155,12 +189,10 @@
                 listContainer.appendChild(row);
             }
 
-            // Cập nhật số lượng lên header bảng điều khiển
             document.getElementById('view-total').innerText = total;
             document.getElementById('view-live').innerText = live;
             document.getElementById('view-dead').innerText = dead;
 
-            // Cập nhật đồ thị % trắc nghiệm câu hỏi
             if (currentMode === 'MCQ') {
                 let totalLiveAnswered = counts.A + counts.B + counts.C + counts.D;
                 ['A', 'B', 'C', 'D'].forEach(option => {

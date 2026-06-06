@@ -7,7 +7,7 @@
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 750px; text-align: center; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 800px; text-align: center; }
         h2 { color: #333; margin-bottom: 20px; }
         button { background: #27ae60; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 8px; cursor: pointer; transition: 0.3s; width: 100%; }
         button:hover { background: #219653; }
@@ -17,16 +17,33 @@
         .quiz-setup label { font-weight: bold; display: block; margin-top: 8px; color: #555; }
         .inline-group { display: flex; gap: 10px; }
         .timer-banner { font-size: 24px; font-weight: bold; color: #e74c3c; margin: 10px 0; }
-        .player-list { text-align: left; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px; max-height: 250px; overflow-y: auto; }
-        .player-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #ddd; }
+        
+        .grading-zone { background: #e8f4f8; padding: 15px; border-radius: 8px; margin: 15px 0; border: 2px dashed #2980b9; display: none; }
+        .btn-grade-group { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
+        .btn-g { font-weight: bold; font-size: 18px; padding: 15px; border-radius: 6px; border: none; color: white; cursor: pointer; }
+        .bg-A { background: #e74c3c; } .bg-A:hover { background: #c0392b; }
+        .bg-B { background: #3498db; } .bg-B:hover { background: #2980b9; }
+        .bg-C { background: #2ecc71; } .bg-C:hover { background: #27ae60; }
+        .bg-D { background: #f1c40f; } .bg-D:hover { background: #f39c12; }
+
+        .player-list { text-align: left; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px; max-height: 350px; overflow-y: auto; }
+        .player-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #ddd; }
+        .player-item.eliminated-row { background: #fce4e4; opacity: 0.7; }
         .player-info { display: flex; flex-direction: column; }
         .player-name-text { font-weight: bold; font-size: 16px; }
         .time-elapsed { font-size: 12px; color: #2980b9; font-weight: bold; margin-top: 2px; }
-        .score-hint { font-size: 12px; color: #27ae60; font-weight: bold; margin-top: 1px; }
-        .badge { background: #2ecc71; color: white; padding: 4px 10px; border-radius: 4px; font-size: 14px; max-width: 50%; word-break: break-all; }
+        
+        .action-btns { display: flex; gap: 5px; align-items: center; }
+        .btn-kick { background: #e74c3c; padding: 6px 12px; font-size: 13px; border-radius: 4px; border: none; color: white; cursor: pointer; width: auto; font-weight: bold; }
+        .btn-kick:hover { background: #c0392b; }
+        .btn-revive { background: #2ecc71; padding: 6px 12px; font-size: 13px; border-radius: 4px; border: none; color: white; cursor: pointer; width: auto; font-weight: bold; }
+        .btn-revive:hover { background: #27ae60; }
+
+        .badge { background: #7f8c8d; color: white; padding: 5px 12px; border-radius: 4px; font-size: 14px; font-weight: bold; }
         .status-badge { font-size: 12px; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px;}
         .status-lock { background: #e74c3c; color: white; }
         .status-typing { background: #f39c12; color: white; }
+
         .chart-container { margin-top: 25px; text-align: left; background: #fff; padding: 15px; border: 1px solid #e1e4e8; border-radius: 8px; }
         .bar-row { display: flex; align-items: center; margin-bottom: 10px; }
         .bar-label { width: 25px; font-weight: bold; font-size: 16px; }
@@ -41,7 +58,7 @@
 </head>
 <body>
     <div class="card">
-        <h2>BẢN ĐIỀU KHIỂN (CONTROLLER)</h2>
+        <h2>BẢN ĐIỀU KHIỂN (CONTROLLER ADMIN)</h2>
         <div class="quiz-setup">
             <label>Loại câu hỏi (Chế độ chơi):</label>
             <select id="input-quiz-type" onchange="toggleControllerSetupFields()">
@@ -67,15 +84,25 @@
         <button id="btn-start-quiz" onclick="startQuiz()">▶ PHÁT ĐỀ & BẮT ĐẦU TÍNH GIỜ</button>
         <div class="timer-banner" id="control-timer">Thời gian câu hỏi: --</div>
 
+        <div class="grading-zone" id="grading-box">
+            <b style="color: #2980b9; font-size: 16px;">📢 CHỌN ĐÁP ÁN ĐÚNG ĐỂ CÔNG BỐ KẾT QUẢ:</b>
+            <div class="btn-grade-group">
+                <button class="btn-g bg-A" onclick="submitCorrectAnswer('A')">A</button>
+                <button class="btn-g bg-B" onclick="submitCorrectAnswer('B')">B</button>
+                <button class="btn-g bg-C" onclick="submitCorrectAnswer('C')">C</button>
+                <button class="btn-g bg-D" onclick="submitCorrectAnswer('D')">D</button>
+            </div>
+        </div>
+
         <div class="chart-container" id="controller-chart-box">
-            <div style="font-weight: bold; text-align: center; margin-bottom: 5px;">Thống kê % Trắc nghiệm</div>
+            <div style="font-weight: bold; text-align: center; margin-bottom: 5px;">Thống kê % Trắc nghiệm (Chỉ tính người đang đấu)</div>
             <div class="bar-row"><span class="bar-label" style="color:#e74c3c">A</span><div class="bar-wrapper"><div id="bar-A" class="bar-fill bar-fill-A"></div></div><span id="text-A" class="bar-text">0% (0)</span></div>
             <div class="bar-row"><span class="bar-label" style="color:#3498db">B</span><div class="bar-wrapper"><div id="bar-B" class="bar-fill bar-fill-B"></div></div><span id="text-B" class="bar-text">0% (0)</span></div>
             <div class="bar-row"><span class="bar-label" style="color:#2ecc71">C</span><div class="bar-wrapper"><div id="bar-C" class="bar-fill bar-fill-C"></div></div><span id="text-C" class="bar-text">0% (0)</span></div>
             <div class="bar-row"><span class="bar-label" style="color:#f1c40f">D</span><div class="bar-wrapper"><div id="bar-D" class="bar-fill bar-fill-D"></div></div><span id="text-D" class="bar-text">0% (0)</span></div>
         </div>
 
-        <h3>Danh sách câu trả lời từ Player (<span id="player-count">0</span>)</h3>
+        <h3>Danh sách thí sinh (<span id="player-count">0</span>)</h3>
         <div class="player-list" id="players-display"></div>
     </div>
 
@@ -88,7 +115,12 @@
         let currentMaxScore = 100;
 
         toggleControllerSetupFields();
-        setInterval(() => { channel.postMessage({ type: 'CONTROLLER_PING' }); }, 1000);
+        
+        // Gửi dữ liệu đồng bộ liên tục cho Display và Player
+        setInterval(() => { 
+            channel.postMessage({ type: 'CONTROLLER_PING' }); 
+            channel.postMessage({ type: 'SYNC_DISPLAY_DATA', players: playersMap });
+        }, 500);
 
         function toggleControllerSetupFields() {
             const type = document.getElementById('input-quiz-type').value;
@@ -101,12 +133,12 @@
 
         function startQuiz() {
             clearInterval(countdownInterval);
+            document.getElementById('grading-box').style.display = 'none';
             currentMode = document.getElementById('input-quiz-type').value;
             const question = document.getElementById('input-question').value;
             currentMaxDuration = parseInt(document.getElementById('input-timer').value) || 15;
             currentMaxScore = parseFloat(document.getElementById('input-question-score').value) || 100;
             
-            // Gửi đáp án trống định dạng mặc định cho giao diện Player
             let answers = { A: "Đáp án A", B: "Đáp án B", C: "Đáp án C", D: "Đáp án D" };
 
             for (let p in playersMap) { 
@@ -124,6 +156,8 @@
             document.getElementById('btn-start-quiz').disabled = true;
             document.getElementById('control-timer').innerText = `⏳ CÒN LẠI: ${timeLeft}s`;
 
+            if(currentMode === 'MCQ') { document.getElementById('grading-box').style.display = 'block'; }
+
             countdownInterval = setInterval(() => {
                 timeLeft--;
                 if (timeLeft <= 0) {
@@ -137,15 +171,45 @@
             }, 1000);
         }
 
+        function submitCorrectAnswer(correctKey) {
+            clearInterval(countdownInterval);
+            document.getElementById('control-timer').innerText = `🎉 Đã công bố đáp án đúng là: ${correctKey}`;
+            document.getElementById('btn-start-quiz').disabled = false;
+            channel.postMessage({ type: 'TIME_UP', duration: currentMaxDuration });
+            channel.postMessage({ type: 'SHOW_RESULT', correctAns: correctKey });
+        }
+
+        // HÀM LOẠI BỎ NGƯỜI CHƠI (KICK)
+        function kickPlayer(name) {
+            if(playersMap[name]) {
+                playersMap[name].isEliminated = true;
+                playersMap[name].answer = 'Bị Loại ☠️';
+                updateControllerUI();
+            }
+        }
+
+        // HÀM HỒI SINH NGƯỜI CHƠI
+        function revivePlayer(name) {
+            if(playersMap[name]) {
+                playersMap[name].isEliminated = false;
+                playersMap[name].answer = 'Chưa trả lời';
+                updateControllerUI();
+            }
+        }
+
         channel.onmessage = (event) => {
             const data = event.data;
             if (data.type === 'PLAYER_JOIN') {
                 if (!playersMap[data.name]) {
-                    playersMap[data.name] = { answer: 'Chưa trả lời', isLocked: false, timeTaken: null, calculatedScore: 0 };
+                    // Mặc định ban đầu gia nhập phòng: isEliminated = false
+                    playersMap[data.name] = { answer: 'Chưa trả lời', isLocked: false, timeTaken: null, calculatedScore: 0, isEliminated: false };
                 }
                 updateControllerUI();
             } else if (data.type === 'PLAYER_SUBMIT') {
                 if (playersMap[data.name]) {
+                    // Nếu đã bị loại rồi thì không ghi đè dữ liệu gửi từ máy con lên nữa
+                    if (playersMap[data.name].isEliminated) return;
+
                     playersMap[data.name].answer = data.answer; 
                     playersMap[data.name].isLocked = data.isLocked;
                     playersMap[data.name].timeTaken = data.timeTaken; 
@@ -171,36 +235,31 @@
 
             for (let name in playersMap) {
                 totalPlayers++;
-                const ans = playersMap[name].answer;
-                const isLock = playersMap[name].isLocked;
-                const timeTaken = playersMap[name].timeTaken;
-                const score = playersMap[name].calculatedScore;
+                const p = playersMap[name];
 
-                if(currentMode === 'MCQ' && counts[ans] !== undefined) { counts[ans]++; }
+                if(currentMode === 'MCQ' && !p.isEliminated && counts[p.answer] !== undefined) { counts[p.answer]++; }
 
                 const item = document.createElement('div');
-                item.className = 'player-item';
+                item.className = `player-item ${p.isEliminated ? 'eliminated-row' : ''}`;
                 
-                let badgeStyle = "background:#7f8c8d";
-                if (ans !== 'Chưa trả lời') { badgeStyle = currentMode === 'MCQ' ? "background:#2ecc71" : "background:#9b59b6"; }
+                let badgeStyle = p.isEliminated ? "background:#c0392b" : (p.answer !== 'Chưa trả lời' ? "background:#2ecc71" : "background:#7f8c8d");
                 
-                let statusIcon = isLock ? `<span class="status-badge status-lock">🔒 Đã Chốt</span>` : `<span class="status-badge status-typing">✍️ Đang nhập...</span>`;
-                if (ans === 'Chưa trả lời') statusIcon = '';
+                let statusIcon = p.isLocked ? `<span class="status-badge status-lock">🔒 Đã Chốt</span>` : `<span class="status-badge status-typing">✍️ Đang nhập...</span>`;
+                if (p.answer === 'Chưa trả lời' || p.isEliminated) statusIcon = '';
 
-                let timeText = ''; let scoreText = '';
-                if (ans !== 'Chưa trả lời') {
-                    if (isLock && timeTaken !== null) {
-                        timeText = `<span class="time-elapsed">⏱️ Phản hồi: ${timeTaken} giây</span>`;
-                        scoreText = `<span class="score-hint">🎯 Điểm dự kiến: ${score}đ / ${currentMaxScore}đ</span>`;
-                    } else { timeText = `<span class="time-elapsed" style="color:#aaa">⏱️ Đang tính giờ...</span>`; }
-                }
+                let actionArea = p.isEliminated 
+                    ? `<button class="btn-revive" onclick="revivePlayer('${name}')">❤️ Hồi sinh</button>` 
+                    : `<button class="btn-kick" onclick="kickPlayer('${name}')">💥 Loại (Kick)</button>`;
 
                 item.innerHTML = `
                     <div class="player-info">
-                        <span class="player-name-text">👤 ${name} ${statusIcon}</span>
-                        ${timeText} ${scoreText}
+                        <span class="player-name-text">👤 ${name} ${p.isEliminated ? '<b>(ĐÃ BỊ LOẠI)</b>' : statusIcon}</span>
+                        ${!p.isEliminated && p.answer !== 'Chưa trả lời' && p.isLocked ? `<span class="time-elapsed">⏱️ Phản hồi: ${p.timeTaken}s | 🎯 Điểm: ${p.calculatedScore}đ</span>` : ''}
                     </div>
-                    <span class="badge" style="${badgeStyle}">${ans}</span>
+                    <div class="action-btns">
+                        <span class="badge" style="${badgeStyle}">${p.answer}</span>
+                        ${actionArea}
+                    </div>
                 `;
                 listContainer.appendChild(item);
             }

@@ -9,16 +9,16 @@
         body { background-color: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
         .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 800px; text-align: center; }
         h2 { color: #333; margin-bottom: 20px; }
-        button { background: #27ae60; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 8px; cursor: pointer; transition: 0.3s; width: 100%; }
+        button { background: #27ae60; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 8px; cursor: pointer; transition: 0.3s; width: 100%; font-weight: bold; }
         button:hover { background: #219653; }
         button:disabled { background: #ccc; cursor: not-allowed; opacity: 0.6; }
         input, select { padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 10px; width: 100%; }
         .quiz-setup { text-align: left; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
         .quiz-setup label { font-weight: bold; display: block; margin-top: 8px; color: #555; }
-        .inline-group { display: flex; gap: 10px; }
-        .timer-banner { font-size: 24px; font-weight: bold; color: #e74c3c; margin: 10px 0; }
+        .inline-group { display: flex; gap: 10px; margin-bottom: 10px; }
+        .timer-banner { font-size: 24px; font-weight: bold; color: #e74c3c; margin: 15px 0; }
         
-        .grading-zone { background: #e8f4f8; padding: 15px; border-radius: 8px; margin: 15px 0; border: 2px dashed #2980b9; display: none; }
+        .grading-zone { background: #e8f4f8; padding: 15px; border-radius: 8px; margin: 15px 0; border: 2px dashed #2980b9; display: none; text-align: left; }
         .btn-grade-group { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; margin-bottom: 15px; }
         .btn-g { font-weight: bold; font-size: 18px; padding: 15px; border-radius: 6px; border: none; color: white; cursor: pointer; }
         .bg-A { background: #e74c3c; } .bg-A:hover { background: #c0392b; }
@@ -26,8 +26,7 @@
         .bg-C { background: #2ecc71; } .bg-C:hover { background: #27ae60; }
         .bg-D { background: #f1c40f; } .bg-D:hover { background: #f39c12; }
 
-        /* CSS Nút Show Display mới */
-        .btn-show-display { background: #9b59b6; font-size: 18px; font-weight: bold; padding: 15px; border-radius: 8px; display: none; margin-top: 5px; animation: pulse 1.5s infinite; }
+        .btn-show-display { background: #9b59b6; font-size: 18px; font-weight: bold; padding: 15px; border-radius: 8px; display: none; margin-top: 10px; animation: pulse 1.5s infinite; border: none; color: white; width: 100%; cursor: pointer; }
         .btn-show-display:hover { background: #8e44ad; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(155, 89, 182, 0.5); } 70% { box-shadow: 0 0 0 10px rgba(155, 89, 182, 0); } 100% { box-shadow: 0 0 0 0 rgba(155, 89, 182, 0); } }
 
@@ -68,19 +67,40 @@
             <label>Loại câu hỏi (Chế độ chơi):</label>
             <select id="input-quiz-type" onchange="toggleControllerSetupFields()">
                 <option value="MCQ">Trắc nghiệm lựa chọn (A, B, C, D)</option>
-                <option value="SHORT_ANS">Trả lời nhanh (Nhập văn bản tự do)</option>
+                <option value="SHORT_ANS">Trả lời nhanh (Nhập tự do)</option>
             </select>
             
-            <label>Nội dung câu hỏi (Hoặc tiêu đề câu số):</label>
-            <input type="text" id="input-question" value="Câu hỏi số 1">
+            <label>Nội dung câu hỏi:</label>
+            <input type="text" id="input-question" value="Thủ đô của Việt Nam là gì?">
             
             <div class="inline-group">
+                <div style="flex: 1;">
+                    <label>Đáp án A:</label>
+                    <input type="text" id="ans-A" value="TP. Hồ Chí Minh">
+                </div>
+                <div style="flex: 1;">
+                    <label>Đáp án B:</label>
+                    <input type="text" id="ans-B" value="Hà Nội">
+                </div>
+            </div>
+            <div class="inline-group">
+                <div style="flex: 1;">
+                    <label>Đáp án C:</label>
+                    <input type="text" id="ans-C" value="Đà Nẵng">
+                </div>
+                <div style="flex: 1;">
+                    <label>Đáp án D:</label>
+                    <input type="text" id="ans-D" value="Cần Thơ">
+                </div>
+            </div>
+
+            <div class="inline-group">
                 <div>
-                    <label>Thời gian trả lời (giây):</label>
+                    <label>Thời gian (giây):</label>
                     <input type="number" id="input-timer" value="15" min="5" style="width: 120px;">
                 </div>
                 <div style="flex-grow: 1;">
-                    <label>Số điểm tối đa của câu này:</label>
+                    <label>Số điểm tối đa:</label>
                     <input type="number" id="input-question-score" value="100" min="1" style="width: 100%;">
                 </div>
             </div>
@@ -90,26 +110,26 @@
         <div class="timer-banner" id="control-timer">Thời gian câu hỏi: --</div>
 
         <div class="grading-zone" id="grading-box">
-            <b style="color: #2980b9; font-size: 16px;">📢 CHỌN ĐÁP ÁN ĐÚNG:</b>
+            <b style="color: #2980b9; font-size: 16px;">📢 BƯỚC 1: CHỌN ĐÁP ÁN ĐÚNG ĐỂ CHẤM ĐIỂM:</b>
             <div class="btn-grade-group">
                 <button class="btn-g bg-A" onclick="submitCorrectAnswer('A')">A</button>
                 <button class="btn-g bg-B" onclick="submitCorrectAnswer('B')">B</button>
                 <button class="btn-g bg-C" onclick="submitCorrectAnswer('C')">C</button>
                 <button class="btn-g bg-D" onclick="submitCorrectAnswer('D')">D</button>
             </div>
-
-            <button id="btn-trigger-display" class="btn-show-display" onclick="publishToDisplayScreen()">👁️ SHOW ĐÁP ÁN LÊN DISPLAY</button>
+            
+            <button id="btn-show-display" class="btn-show-display" onclick="triggerDisplayAnswer()">👁️ BƯỚC 2: SHOW ĐÁP ÁN LÊN DISPLAY</button>
         </div>
 
         <div class="chart-container" id="controller-chart-box">
-            <div style="font-weight: bold; text-align: center; margin-bottom: 5px;">Thống kê % Trắc nghiệm (Chỉ tính người đang đấu)</div>
+            <div style="font-weight: bold; text-align: center; margin-bottom: 5px;">Thống kê % chọn phương án</div>
             <div class="bar-row"><span class="bar-label" style="color:#e74c3c">A</span><div class="bar-wrapper"><div id="bar-A" class="bar-fill bar-fill-A"></div></div><span id="text-A" class="bar-text">0% (0)</span></div>
             <div class="bar-row"><span class="bar-label" style="color:#3498db">B</span><div class="bar-wrapper"><div id="bar-B" class="bar-fill bar-fill-B"></div></div><span id="text-B" class="bar-text">0% (0)</span></div>
             <div class="bar-row"><span class="bar-label" style="color:#2ecc71">C</span><div class="bar-wrapper"><div id="bar-C" class="bar-fill bar-fill-C"></div></div><span id="text-C" class="bar-text">0% (0)</span></div>
             <div class="bar-row"><span class="bar-label" style="color:#f1c40f">D</span><div class="bar-wrapper"><div id="bar-D" class="bar-fill bar-fill-D"></div></div><span id="text-D" class="bar-text">0% (0)</span></div>
         </div>
 
-        <h3>Danh sách thí sinh (<span id="player-count">0</span>)</h3>
+        <h3>Thí sinh (<span id="player-count">0</span>)</h3>
         <div class="player-list" id="players-display"></div>
     </div>
 
@@ -120,36 +140,35 @@
         let countdownInterval = null;
         let currentMaxDuration = 15;
         let currentMaxScore = 100;
-        let savedCorrectAnswer = ''; // Lưu tạm để phục vụ nút bấm show display sau đó
+        let savedCorrectAns = '';
 
-        toggleControllerSetupFields();
-        
+        function toggleControllerSetupFields() {
+            const type = document.getElementById('input-quiz-type').value;
+            document.getElementById('controller-chart-box').style.display = (type === 'MCQ') ? 'block' : 'none';
+        }
+
         setInterval(() => { 
             channel.postMessage({ type: 'CONTROLLER_PING' }); 
             channel.postMessage({ type: 'SYNC_DISPLAY_DATA', players: playersMap });
         }, 500);
 
-        function toggleControllerSetupFields() {
-            const type = document.getElementById('input-quiz-type').value;
-            if (type === 'MCQ') {
-                document.getElementById('controller-chart-box').style.display = 'block';
-            } else {
-                document.getElementById('controller-chart-box').style.display = 'none';
-            }
-        }
-
         function startQuiz() {
             clearInterval(countdownInterval);
             document.getElementById('grading-box').style.display = 'none';
-            document.getElementById('btn-trigger-display').style.display = 'none'; // Ẩn nút show cũ đi
-            savedCorrectAnswer = '';
+            document.getElementById('btn-show-display').style.display = 'none';
+            savedCorrectAns = '';
 
             currentMode = document.getElementById('input-quiz-type').value;
             const question = document.getElementById('input-question').value;
             currentMaxDuration = parseInt(document.getElementById('input-timer').value) || 15;
             currentMaxScore = parseFloat(document.getElementById('input-question-score').value) || 100;
             
-            let answers = { A: "Đáp án A", B: "Đáp án B", C: "Đáp án C", D: "Đáp án D" };
+            let answers = {
+                A: document.getElementById('ans-A').value,
+                B: document.getElementById('ans-B').value,
+                C: document.getElementById('ans-C').value,
+                D: document.getElementById('ans-D').value
+            };
 
             for (let p in playersMap) { 
                 playersMap[p].answer = 'Chưa trả lời'; 
@@ -172,4 +191,118 @@
                 timeLeft--;
                 if (timeLeft <= 0) {
                     clearInterval(countdownInterval);
-                    document.getElementById('control-timer').innerText = "🛑 HẾT GI
+                    document.getElementById('control-timer').innerText = "🛑 HẾT GIỜ - ĐÃ KHÓA ĐÁP ÁN!";
+                    document.getElementById('btn-start-quiz').disabled = false;
+                    channel.postMessage({ type: 'TIME_UP', duration: currentMaxDuration });
+                } else {
+                    document.getElementById('control-timer').innerText = `⏳ CÒN LẠI: ${timeLeft}s`;
+                }
+            }, 1000);
+        }
+
+        function submitCorrectAnswer(correctKey) {
+            clearInterval(countdownInterval);
+            savedCorrectAns = correctKey;
+            document.getElementById('control-timer').innerText = `🎯 Đã chấm xong: Chọn ${correctKey}. Sẵn sàng Show!`;
+            document.getElementById('btn-start-quiz').disabled = false;
+            
+            channel.postMessage({ type: 'TIME_UP', duration: currentMaxDuration });
+            channel.postMessage({ type: 'SHOW_RESULT', correctAns: correctKey });
+
+            document.getElementById('btn-show-display').style.display = 'block';
+        }
+
+        function triggerDisplayAnswer() {
+            if(!savedCorrectAns) return;
+            channel.postMessage({ type: 'COMMAND_DISPLAY_REVEAL', correctAns: savedCorrectAns });
+            document.getElementById('control-timer').innerText = `🎉 ĐÃ SHOW ĐÁP ÁN ${savedCorrectAns} LÊN DISPLAY!`;
+            document.getElementById('btn-show-display').style.display = 'none';
+        }
+
+        function kickPlayer(name) {
+            if(playersMap[name]) {
+                playersMap[name].isEliminated = true;
+                playersMap[name].answer = 'Bị Loại ☠️';
+                updateControllerUI();
+            }
+        }
+
+        function revivePlayer(name) {
+            if(playersMap[name]) {
+                playersMap[name].isEliminated = false;
+                playersMap[name].answer = 'Chưa trả lời';
+                updateControllerUI();
+            }
+        }
+
+        channel.onmessage = (event) => {
+            const data = event.data;
+            if (data.type === 'PLAYER_JOIN') {
+                if (!playersMap[data.name]) {
+                    playersMap[data.name] = { answer: 'Chưa trả lời', isLocked: false, timeTaken: null, calculatedScore: 0, isEliminated: false };
+                }
+                updateControllerUI();
+            } else if (data.type === 'PLAYER_SUBMIT') {
+                if (playersMap[data.name]) {
+                    if (playersMap[data.name].isEliminated) return;
+                    playersMap[data.name].answer = data.answer; 
+                    playersMap[data.name].isLocked = data.isLocked;
+                    playersMap[data.name].timeTaken = data.timeTaken; 
+                    
+                    if(data.isLocked && data.timeTaken !== null) {
+                        let ratio = 1 - (parseFloat(data.timeTaken) / currentMaxDuration);
+                        if (ratio < 0) ratio = 0; 
+                        playersMap[data.name].calculatedScore = (ratio * currentMaxScore).toFixed(2);
+                    } else {
+                        playersMap[data.name].calculatedScore = 0;
+                    }
+                    updateControllerUI();
+                }
+            }
+        };
+
+        function updateControllerUI() {
+            const listContainer = document.getElementById('players-display');
+            listContainer.innerHTML = '';
+            let totalPlayers = 0;
+            let counts = { A: 0, B: 0, C: 0, D: 0 };
+
+            for (let name in playersMap) {
+                totalPlayers++;
+                const p = playersMap[name];
+                if(currentMode === 'MCQ' && !p.isEliminated && counts[p.answer] !== undefined) { counts[p.answer]++; }
+
+                const item = document.createElement('div');
+                item.className = `player-item ${p.isEliminated ? 'eliminated-row' : ''}`;
+                let badgeStyle = p.isEliminated ? "background:#c0392b" : (p.answer !== 'Chưa trả lời' ? "background:#2ecc71" : "background:#7f8c8d");
+                let statusIcon = p.isLocked ? `<span class="status-badge status-lock">🔒 Đã Chốt</span>` : `<span class="status-badge status-typing">✍️ Đang chọn...</span>`;
+                if (p.answer === 'Chưa trả lời' || p.isEliminated) statusIcon = '';
+
+                let actionArea = p.isEliminated 
+                    ? `<button class="btn-revive" onclick="revivePlayer('${name}')">❤️ Hồi sinh</button>` 
+                    : `<button class="btn-kick" onclick="kickPlayer('${name}')">💥 Loại</button>`;
+
+                item.innerHTML = `
+                    <div class="player-info">
+                        <span class="player-name-text">👤 ${name} ${p.isEliminated ? '<b>(LOẠI)</b>' : statusIcon}</span>
+                        ${!p.isEliminated && p.answer !== 'Chưa trả lời' && p.isLocked ? `<span class="time-elapsed">⏱️ ${p.timeTaken}s | 🎯 ${p.calculatedScore}đ</span>` : ''}
+                    </div>
+                    <div class="action-btns"><span class="badge" style="${badgeStyle}">${p.answer}</span>${actionArea}</div>
+                `;
+                listContainer.appendChild(item);
+            }
+            document.getElementById('player-count').innerText = totalPlayers;
+
+            if (currentMode === 'MCQ') {
+                let totalAnswered = counts.A + counts.B + counts.C + counts.D;
+                ['A', 'B', 'C', 'D'].forEach(option => {
+                    let count = counts[option];
+                    let percent = totalAnswered > 0 ? Math.round((count / totalAnswered) * 100) : 0;
+                    document.getElementById(`bar-${option}`).style.width = `${percent}%`;
+                    document.getElementById(`text-${option}`).innerText = `${percent}% (${count})`;
+                });
+            }
+        }
+    </script>
+</body>
+</html>

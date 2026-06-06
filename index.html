@@ -73,7 +73,10 @@
         let countdownInterval = null;
         let timeIsOverGlobal = false; 
         let currentMaxDuration = 15;
-        let startTimeToken = 0; 
+        
+        // Cải tiến biến quản lý thời gian tích lũy
+        let startThinkingTime = 0; 
+        let totalTimeAccumulated = 0; 
         let playerTempAnswer = ''; 
         let isAnswerLocked = false; 
         let savedTimeTaken = null; 
@@ -108,7 +111,6 @@
             channel.postMessage({ type: 'PLAYER_JOIN', name: myName });
         }
 
-        // Tự động phản hồi Ping giữ kết nối bất kể đang ở màn hình nào
         channel.onmessage = (event) => {
             const data = event.data;
             if (data.type === 'CONTROLLER_PING' && myName !== '') {
@@ -118,13 +120,16 @@
 
             if (data.type === 'START_QUIZ') {
                 currentMode = data.mode;
-                startTimeToken = data.timestamp; // Mốc cố định Date.now() từ Controller
                 currentMaxDuration = data.duration;
                 timeIsOverGlobal = false;
                 isAnswerLocked = false;
                 playerTempAnswer = '';
                 savedTimeTaken = null; 
                 
+                // Reset bộ đếm thời gian tích lũy của câu hỏi mới
+                startThinkingTime = Date.now(); 
+                totalTimeAccumulated = 0; 
+
                 document.getElementById('player-action-area').style.display = 'block';
                 document.getElementById('btn-lock-answer').style.display = 'inline-block';
                 document.getElementById('btn-unlock-answer').style.display = 'none';
@@ -183,10 +188,12 @@
             }
             isAnswerLocked = true;
             
-            // Tính toán thời gian dựa trên mốc Epoch mili-giây thực tế của hệ thống
-            const endTimeToken = Date.now();
-            const timeDiff = (endTimeToken - startTimeToken) / 1000; 
-            savedTimeTaken = Math.max(0.01, Math.min(timeDiff, currentMaxDuration)).toFixed(2); 
+            // Tính toán thời gian thực tế đã bỏ ra từ lúc bắt đầu/mở khóa đến lúc chốt
+            const sessionDuration = (Date.now() - startThinkingTime) / 1000;
+            totalTimeAccumulated += sessionDuration;
+
+            // Đảm bảo không bị vượt quá thời gian tối đa quy định của câu hỏi
+            savedTimeTaken = Math.max(0.01, Math.min(totalTimeAccumulated, currentMaxDuration)).toFixed(2); 
 
             if (currentMode === 'MCQ') {
                 enableMCQButtons(false);
@@ -209,6 +216,9 @@
             if (timeIsOverGlobal) return;
             isAnswerLocked = false;
 
+            // Đánh dấu mốc thời gian bắt đầu sửa mới
+            startThinkingTime = Date.now(); 
+
             if (currentMode === 'MCQ') {
                 enableMCQButtons(true);
                 document.getElementById('btn-lock-answer').style.display = 'inline-block';
@@ -223,7 +233,6 @@
             }
 
             let sendVal = playerTempAnswer ? playerTempAnswer : "Chưa trả lời";
-            // Gửi thông báo chuyển trạng thái "Đang sửa", không ghi đè thời gian cũ lên Tech khi chưa chốt mới
             channel.postMessage({ type: 'PLAYER_SUBMIT', name: myName, answer: sendVal, isLocked: false, timeTaken: null });
         }
 
@@ -244,8 +253,12 @@
             txtInput.classList.add('locked');
             document.getElementById('player-action-area').style.display = 'none'; 
             
-            let finalAns = playerTempAnswer ? playerTempAnswer : "Không trả lời (Quá giờ)";
+            // Nếu quá giờ mà chưa chốt, cộng thêm khoảng thời gian từ lúc mở khóa đến lúc hết giờ
+            const sessionDuration = (Date.now() - startThinkingTime) / 1000;
+            totalTimeAccumulated += sessionDuration;
             savedTimeTaken = parseFloat(maxDuration).toFixed(2); 
+
+            let finalAns = playerTempAnswer ? playerTempAnswer : "Không trả lời (Quá giờ)";
 
             document.getElementById('player-status').innerText = `🛑 HẾT GIỜ! Đáp án chốt cuối cùng là: ${finalAns}`;
             document.getElementById('player-timer').innerText = "00s";

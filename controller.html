@@ -13,11 +13,9 @@
         button:hover { background: #219653; }
         button:disabled { background: #ccc; cursor: not-allowed; opacity: 0.6; }
         input, select { padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 10px; width: 100%; }
-        
         .quiz-setup { text-align: left; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
         .quiz-setup label { font-weight: bold; display: block; margin-top: 8px; color: #555; }
         .inline-group { display: flex; gap: 10px; }
-
         .timer-banner { font-size: 24px; font-weight: bold; color: #e74c3c; margin: 10px 0; }
         .player-list { text-align: left; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px; max-height: 250px; overflow-y: auto; }
         .player-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #ddd; }
@@ -29,7 +27,6 @@
         .status-badge { font-size: 12px; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px;}
         .status-lock { background: #e74c3c; color: white; }
         .status-typing { background: #f39c12; color: white; }
-
         .chart-container { margin-top: 25px; text-align: left; background: #fff; padding: 15px; border: 1px solid #e1e4e8; border-radius: 8px; }
         .bar-row { display: flex; align-items: center; margin-bottom: 10px; }
         .bar-label { width: 25px; font-weight: bold; font-size: 16px; }
@@ -43,20 +40,16 @@
     </style>
 </head>
 <body>
-
     <div class="card">
         <h2>BẢN ĐIỀU KHIỂN (CONTROLLER)</h2>
-        
         <div class="quiz-setup">
             <label>Loại câu hỏi (Chế độ chơi):</label>
             <select id="input-quiz-type" onchange="toggleControllerSetupFields()">
                 <option value="MCQ">Trắc nghiệm lựa chọn (A, B, C, D)</option>
                 <option value="SHORT_ANS">Trả lời nhanh (Nhập văn bản tự do)</option>
             </select>
-
             <label>Nội dung câu hỏi:</label>
             <input type="text" id="input-question" value="Thủ đô của Việt Nam là gì?">
-            
             <div id="setup-mcq-fields">
                 <div class="inline-group">
                     <div><label>Đáp án A:</label><input type="text" id="input-A" value="TP. Hồ Chí Minh"></div>
@@ -67,7 +60,6 @@
                     <div><label>Đáp án D:</label><input type="text" id="input-D" value="Cần Thơ"></div>
                 </div>
             </div>
-
             <div class="inline-group">
                 <div>
                     <label>Thời gian trả lời (giây):</label>
@@ -81,7 +73,6 @@
         </div>
 
         <button id="btn-start-quiz" onclick="startQuiz()">▶ PHÁT ĐỀ & BẮT ĐẦU TÍNH GIỜ</button>
-        
         <div class="timer-banner" id="control-timer">Thời gian câu hỏi: --</div>
 
         <div class="chart-container" id="controller-chart-box">
@@ -104,8 +95,8 @@
         let currentMaxDuration = 15;
         let currentMaxScore = 100;
 
-        // Tự động kích hoạt khi mở trang
         toggleControllerSetupFields();
+        // Định kỳ ping để giữ kết nối và kéo các máy con báo danh
         setInterval(() => { channel.postMessage({ type: 'CONTROLLER_PING' }); }, 1000);
 
         function toggleControllerSetupFields() {
@@ -144,7 +135,7 @@
             }
             updateControllerUI();
 
-            const timestamp = performance.now();
+            const timestamp = Date.now(); // Sử dụng mốc thời gian chuẩn hệ thống toàn cục
             channel.postMessage({ type: 'START_QUIZ', mode: currentMode, question, answers, duration: currentMaxDuration, timestamp });
 
             let timeLeft = currentMaxDuration;
@@ -169,8 +160,8 @@
             if (data.type === 'PLAYER_JOIN') {
                 if (!playersMap[data.name]) {
                     playersMap[data.name] = { answer: 'Chưa trả lời', isLocked: false, timeTaken: null, calculatedScore: 0 };
-                    updateControllerUI();
                 }
+                updateControllerUI();
             } else if (data.type === 'PLAYER_SUBMIT') {
                 if (playersMap[data.name]) {
                     playersMap[data.name].answer = data.answer; 

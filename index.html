@@ -15,16 +15,22 @@
         input { padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 10px; width: 100%; }
         .screen { display: none; }
         .active { display: block; }
-        .question-box { background: #2c3e50; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; font-size: 20px; font-weight: bold; }
+        .question-box { background: #2c3e50; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; font-size: 20px; font-weight: bold; position: relative; overflow: hidden; }
         .btn-group { display: grid; grid-template-columns: 1fr; gap: 15px; margin-top: 20px; }
         @media(min-width: 500px) { .btn-group { grid-template-columns: 1fr 1fr; } }
-        .btn-ans { font-size: 18px; font-weight: bold; padding: 18px; color: white; text-align: left; display: flex; align-items: center; border-radius: 8px;}
+        
+        .btn-ans { font-size: 18px; font-weight: bold; padding: 18px; color: white; text-align: left; display: flex; align-items: center; border-radius: 8px; position: relative; background-size: cover; background-position: center; transition: transform 0.2s; }
         .btn-ans span.prefix { font-size: 24px; margin-right: 15px; background: rgba(0,0,0,0.15); padding: 5px 12px; border-radius: 6px; }
-        .btn-a { background: #e74c3c; } .btn-a:hover:not(:disabled) { background: #c0392b; }
-        .btn-b { background: #3498db; } .btn-b:hover:not(:disabled) { background: #2980b9; }
-        .btn-c { background: #2ecc71; } .btn-c:hover:not(:disabled) { background: #27ae60; }
-        .btn-d { background: #f1c40f; } .btn-d:hover:not(:disabled) { background: #f39c12; }
+        .btn-a { background-color: #e74c3c; } .btn-a:hover:not(:disabled) { background-color: #c0392b; }
+        .btn-b { background-color: #3498db; } .btn-b:hover:not(:disabled) { background-color: #2980b9; }
+        .btn-c { background-color: #2ecc71; } .btn-c:hover:not(:disabled) { background-color: #27ae60; }
+        .btn-d { background-color: #f1c40f; } .btn-d:hover:not(:disabled) { background-color: #f39c12; }
         .btn-ans.selected { border: 4px solid #333; box-shadow: 0 0 15px rgba(0,0,0,0.3); transform: scale(1.01); }
+        .btn-ans.fade-out { opacity: 0.25; transform: scale(0.95); }
+
+        /* Giao diện khi bị loại */
+        .eliminated-overlay { display: none; background: #95a5a6; padding: 30px; border-radius: 8px; color: white; font-size: 22px; font-weight: bold; margin-top: 20px; text-shadow: 1px 1px 3px rgba(0,0,0,0.4); }
+
         .text-input-mode { background: #fdfefe; padding: 20px; border: 2px dashed #34495e; border-radius: 8px; margin-top: 20px; }
         .text-input-mode input.locked { background-color: #e9ecef; color: #495057; border-color: #ced4da; cursor: pointer; font-weight: bold; }
         .submit-action-area { margin-top: 20px; padding: 10px; background: #fff3cd; border-radius: 8px; border: 1px solid #ffeeba; }
@@ -43,25 +49,32 @@
                 <b id="player-title">Player</b>
                 <span id="player-timer" style="font-size: 20px; font-weight: bold; color: #e74c3c;">00s</span>
             </div>
-            <div class="question-box" id="display-question">Đang đợi câu hỏi từ Controller...</div>
-            <p id="player-status" style="font-style: italic; color: #666; margin-bottom: 15px;">Hệ thống đang đóng. Vui lòng chờ...</p>
             
-            <div id="player-mcq-box" class="btn-group">
-                <button id="btn-ans-A" class="btn-ans btn-a" onclick="selectMCQAnswer('A')"><span class="prefix">A</span> <span id="text-ans-A">Đáp án A</span></button>
-                <button id="btn-ans-B" class="btn-ans btn-b" onclick="selectMCQAnswer('B')"><span class="prefix">B</span> <span id="text-ans-B">Đáp án B</span></button>
-                <button id="btn-ans-C" class="btn-ans btn-c" onclick="selectMCQAnswer('C')"><span class="prefix">C</span> <span id="text-ans-C">Đáp án C</span></button>
-                <button id="btn-ans-D" class="btn-ans btn-d" onclick="selectMCQAnswer('D')"><span class="prefix">D</span> <span id="text-ans-D">Đáp án D</span></button>
+            <div id="main-play-zone">
+                <div class="question-box" id="display-question">Đang đợi câu hỏi từ Controller...</div>
+                <p id="player-status" style="font-style: italic; color: #666; margin-bottom: 15px;">Hệ thống đang đóng. Vui lòng chờ...</p>
+                
+                <div id="player-mcq-box" class="btn-group">
+                    <button id="btn-ans-A" class="btn-ans btn-a" onclick="selectMCQAnswer('A')"><span class="prefix">A</span> <span id="text-ans-A">Đáp án A</span></button>
+                    <button id="btn-ans-B" class="btn-ans btn-b" onclick="selectMCQAnswer('B')"><span class="prefix">B</span> <span id="text-ans-B">Đáp án B</span></button>
+                    <button id="btn-ans-C" class="btn-ans btn-c" onclick="selectMCQAnswer('C')"><span class="prefix">C</span> <span id="text-ans-C">Đáp án C</span></button>
+                    <button id="btn-ans-D" class="btn-ans btn-d" onclick="selectMCQAnswer('D')"><span class="prefix">D</span> <span id="text-ans-D">Đáp án D</span></button>
+                </div>
+
+                <div id="player-text-box" class="text-input-mode" style="display: none;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 10px; text-align: left;">Nhập câu trả lời của bạn:</label>
+                    <input type="text" id="player-text-input" placeholder="Gõ câu trả lời tại đây..." oninput="syncTextRealtime(this.value)" onmousedown="handleTextClickUnlock()">
+                </div>
+
+                <div id="player-action-area" class="submit-action-area" style="display: none;">
+                    <button id="btn-lock-answer" onclick="lockAnswerFinal()" style="background: #e67e22; font-weight: bold; width: 60%; padding: 10px;">🔒 CHỐT ĐÁP ÁN (Enter)</button>
+                    <button id="btn-unlock-answer" onclick="unlockAnswerToEdit()" style="background: #7f8c8d; font-weight: bold; width: 30%; padding: 10px; display: none;">✏️ Sửa lại</button>
+                </div>
             </div>
 
-            <div id="player-text-box" class="text-input-mode" style="display: none;">
-                <label style="font-weight: bold; display: block; margin-bottom: 10px; text-align: left;">Nhập câu trả lời của bạn:</label>
-                <input type="text" id="player-text-input" placeholder="Gõ câu trả lời tại đây..." oninput="syncTextRealtime(this.value)" onmousedown="handleTextClickUnlock()">
-            </div>
-
-            <div id="player-action-area" class="submit-action-area" style="display: none;">
-                <button id="btn-lock-answer" onclick="lockAnswerFinal()" style="background: #e67e22; font-weight: bold; width: 60%; padding: 10px;">🔒 CHỐT ĐÁP ÁN (Enter)</button>
-                <button id="btn-unlock-answer" onclick="unlockAnswerToEdit()" style="background: #7f8c8d; font-weight: bold; width: 30%; padding: 10px; display: none;">✏️ Sửa lại</button>
-                <p id="action-hint" style="font-size: 12px; color: #7f8c8d; margin: 5px 0 0 0;">* Nhấn Enter hoặc Click vào ô text để bật/tắt chốt nhanh.</p>
+            <div class="eliminated-overlay" id="elim-msg">
+                ☠️ BẠN ĐÃ BỊ LOẠI KHỎI SÀN ĐẤU!<br>
+                <span style="font-size:14px; font-weight:normal; margin-top:5px; display:block; color:#eee;">Hãy theo dõi tiếp màn hình máy chiếu lớn nhé.</span>
             </div>
         </div>
     </div>
@@ -73,8 +86,8 @@
         let countdownInterval = null;
         let timeIsOverGlobal = false; 
         let currentMaxDuration = 15;
+        let iamEliminated = false; // Trạng thái sống/chết của bản thân
         
-        // Cải tiến biến quản lý thời gian tích lũy
         let startThinkingTime = 0; 
         let totalTimeAccumulated = 0; 
         let playerTempAnswer = ''; 
@@ -87,7 +100,7 @@
         }
 
         window.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter' && myName !== '') {
+            if (event.key === 'Enter' && myName !== '' && !iamEliminated) {
                 if (timeIsOverGlobal) return; 
                 if (document.getElementById('player-action-area').style.display === 'block') {
                     if (!isAnswerLocked) { lockAnswerFinal(); } 
@@ -97,7 +110,7 @@
         });
 
         function handleTextClickUnlock() {
-            if (timeIsOverGlobal) return;
+            if (timeIsOverGlobal || iamEliminated) return;
             if (currentMode === 'SHORT_ANS' && isAnswerLocked) { unlockAnswerToEdit(); }
         }
 
@@ -118,6 +131,32 @@
                 return;
             }
 
+            // KIỂM TRA ĐỒNG BỘ TRẠNG THÁI BỊ LOẠI TỪ TECH GỬI VỀ
+            if (data.type === 'SYNC_DISPLAY_DATA') {
+                if(data.players && data.players[myName]) {
+                    let remoteState = data.players[myName].isEliminated;
+                    if (remoteState !== iamEliminated) {
+                        iamEliminated = remoteState;
+                        if(iamEliminated) {
+                            // Ẩn bảng chơi, hiện màn hình thông báo bị loại chết chóc
+                            document.getElementById('main-play-zone').style.display = 'none';
+                            document.getElementById('elim-msg').style.display = 'block';
+                            document.getElementById('elim-msg').style.backgroundColor = '#e74c3c';
+                            clearInterval(countdownInterval);
+                            document.getElementById('player-timer').innerText = "00s";
+                        } else {
+                            // Hồi sinh trở lại sàn đấu
+                            document.getElementById('main-play-zone').style.display = 'block';
+                            document.getElementById('elim-msg').style.display = 'none';
+                            document.getElementById('player-status').innerText = "❤️ Bạn đã được ban tổ chức cứu! Hãy sẵn sàng.";
+                        }
+                    }
+                }
+                return;
+            }
+
+            if (iamEliminated) return; // Nếu đã chết thì bỏ qua mọi hiệu ứng lệnh câu hỏi tiếp theo
+
             if (data.type === 'START_QUIZ') {
                 currentMode = data.mode;
                 currentMaxDuration = data.duration;
@@ -126,7 +165,6 @@
                 playerTempAnswer = '';
                 savedTimeTaken = null; 
                 
-                // Reset bộ đếm thời gian tích lũy của câu hỏi mới
                 startThinkingTime = Date.now(); 
                 totalTimeAccumulated = 0; 
 
@@ -139,6 +177,12 @@
                 txtInput.classList.remove('locked');
                 txtInput.readOnly = false;
 
+                resetMCQButtonStyles();
+                document.querySelectorAll('.btn-ans').forEach(btn => {
+                    btn.style.backgroundImage = 'none';
+                    btn.classList.remove('fade-out');
+                });
+
                 if (currentMode === 'MCQ') {
                     document.getElementById('player-mcq-box').style.display = 'grid';
                     document.getElementById('player-text-box').style.display = 'none';
@@ -147,7 +191,6 @@
                     document.getElementById('text-ans-C').innerText = data.answers.C;
                     document.getElementById('text-ans-D').innerText = data.answers.D;
                     document.getElementById('player-status').innerText = "Hãy chọn phương án rồi nhấn CHỐT ĐÁP ÁN.";
-                    resetMCQButtonStyles();
                     enableMCQButtons(true);
                 } else {
                     document.getElementById('player-mcq-box').style.display = 'none';
@@ -157,13 +200,42 @@
                     document.getElementById('player-status').innerText = "Hãy nhập câu trả lời rồi nhấn Enter để Chốt.";
                 }
                 startPlayerTimer(data.duration);
+
             } else if (data.type === 'TIME_UP') {
                 forceLockOnTimeUp(data.duration);
+            } 
+            else if (data.type === 'SHOW_RESULT') {
+                timeIsOverGlobal = true;
+                clearInterval(countdownInterval);
+                document.getElementById('player-action-area').style.display = 'none';
+                enableMCQButtons(false);
+
+                const correct = data.correctAns;
+                const chosen = playerTempAnswer;
+
+                if (currentMode === 'MCQ') {
+                    document.querySelectorAll('.btn-ans').forEach(btn => {
+                        const option = btn.id.replace('btn-ans-', '');
+                        if (option === chosen) {
+                            if (chosen === correct) {
+                                btn.style.backgroundImage = "url('trulefalserightstrap.png')";
+                                document.getElementById('player-status').innerText = `🎉 CHÍNH XÁC! Bạn trả lời đúng trong ${savedTimeTaken}s.`;
+                            } else {
+                                btn.style.backgroundImage = "url('truefalsewrongstrap.png')";
+                                document.getElementById('player-status').innerText = `❌ SAI MẤT RỒI! Đáp án đúng phải là ${correct}.`;
+                            }
+                        } else if (option === correct) {
+                            btn.style.backgroundImage = "url('trulefalserightstrap.png')";
+                        } else {
+                            btn.classList.add('fade-out');
+                        }
+                    });
+                }
             }
         };
 
         function selectMCQAnswer(ans) {
-            if (isAnswerLocked) return;
+            if (isAnswerLocked || iamEliminated) return;
             playerTempAnswer = ans;
             resetMCQButtonStyles();
             document.getElementById(`btn-ans-${ans}`).classList.add('selected');
@@ -172,13 +244,14 @@
         }
 
         function syncTextRealtime(val) {
-            if (isAnswerLocked) return;
+            if (isAnswerLocked || iamEliminated) return;
             playerTempAnswer = val.trim();
             let sendVal = playerTempAnswer ? playerTempAnswer : "Chưa trả lời";
             channel.postMessage({ type: 'PLAYER_SUBMIT', name: myName, answer: sendVal, isLocked: false, timeTaken: null });
         }
 
         function lockAnswerFinal() {
+            if(iamEliminated) return;
             if (currentMode === 'SHORT_ANS') {
                 playerTempAnswer = document.getElementById('player-text-input').value.trim();
             }
@@ -188,11 +261,8 @@
             }
             isAnswerLocked = true;
             
-            // Tính toán thời gian thực tế đã bỏ ra từ lúc bắt đầu/mở khóa đến lúc chốt
             const sessionDuration = (Date.now() - startThinkingTime) / 1000;
             totalTimeAccumulated += sessionDuration;
-
-            // Đảm bảo không bị vượt quá thời gian tối đa quy định của câu hỏi
             savedTimeTaken = Math.max(0.01, Math.min(totalTimeAccumulated, currentMaxDuration)).toFixed(2); 
 
             if (currentMode === 'MCQ') {
@@ -213,10 +283,8 @@
         }
 
         function unlockAnswerToEdit() {
-            if (timeIsOverGlobal) return;
+            if (timeIsOverGlobal || iamEliminated) return;
             isAnswerLocked = false;
-
-            // Đánh dấu mốc thời gian bắt đầu sửa mới
             startThinkingTime = Date.now(); 
 
             if (currentMode === 'MCQ') {
@@ -237,7 +305,7 @@
         }
 
         function forceLockOnTimeUp(maxDuration) {
-            if (timeIsOverGlobal) return;
+            if (timeIsOverGlobal || iamEliminated) return;
             timeIsOverGlobal = true;
             clearInterval(countdownInterval);
 
@@ -253,14 +321,12 @@
             txtInput.classList.add('locked');
             document.getElementById('player-action-area').style.display = 'none'; 
             
-            // Nếu quá giờ mà chưa chốt, cộng thêm khoảng thời gian từ lúc mở khóa đến lúc hết giờ
             const sessionDuration = (Date.now() - startThinkingTime) / 1000;
             totalTimeAccumulated += sessionDuration;
             savedTimeTaken = parseFloat(maxDuration).toFixed(2); 
 
-            let finalAns = playerTempAnswer ? playerTempAnswer : "Không trả lời (Quá giờ)";
-
-            document.getElementById('player-status').innerText = `🛑 HẾT GIỜ! Đáp án chốt cuối cùng là: ${finalAns}`;
+            let finalAns = playerTempAnswer ? playerTempAnswer : "Không trả lời";
+            document.getElementById('player-status').innerText = `🛑 HẾT GIỜ! Bạn chọn: ${finalAns}. Đợi Admin công bố kết quả...`;
             document.getElementById('player-timer').innerText = "00s";
 
             channel.postMessage({ type: 'PLAYER_SUBMIT', name: myName, answer: finalAns, isLocked: true, timeTaken: savedTimeTaken });

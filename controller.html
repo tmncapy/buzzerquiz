@@ -2,58 +2,255 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Controller - Rung Chuông Vàng</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bản điều khiển - Controller Admin</title>
     <style>
-        body { font-family: sans-serif; background: #f4f7f6; padding: 20px; }
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
-        .btn-main { width: 100%; padding: 15px; background: #27ae60; color: white; border: none; cursor: pointer; font-weight: bold; margin-bottom: 10px; }
-        .soundboard { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
-        .sound-btn { padding: 10px; border: none; color: white; cursor: pointer; border-radius: 5px; }
-        .timer-display { font-size: 24px; color: #c0392b; font-weight: bold; text-align: center; margin: 10px 0; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 800px; text-align: center; }
+        h2 { color: #333; margin-bottom: 20px; }
+        button { background: #27ae60; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 8px; cursor: pointer; transition: 0.3s; width: 100%; font-weight: bold; }
+        button:hover { background: #219653; }
+        button:disabled { background: #ccc !important; cursor: not-allowed !important; opacity: 0.6 !important; animation: none !important; box-shadow: none !important; }
+        input, select { padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 10px; width: 100%; }
+        .quiz-setup { text-align: left; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .quiz-setup label { font-weight: bold; display: block; margin-top: 8px; color: #555; }
+        .inline-group { display: flex; gap: 10px; margin-bottom: 10px; }
+        .timer-banner { font-size: 24px; font-weight: bold; color: #e74c3c; margin: 15px 0; }
+        
+        .control-zone-box { background: #e8f4f8; padding: 15px; border-radius: 8px; margin: 15px 0; border: 2px dashed #2980b9; text-align: left; }
+        .btn-grade-group { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; margin-bottom: 15px; }
+        .btn-g { font-weight: bold; font-size: 18px; padding: 12px; border-radius: 6px; border: none; color: white; cursor: pointer; }
+        .bg-A { background: #e74c3c; } .bg-B { background: #3498db; } .bg-C { background: #2ecc71; } .bg-D { background: #f1c40f; }
+
+        .btn-show-display { background: #9b59b6; font-size: 18px; font-weight: bold; padding: 16px; border-radius: 8px; margin-top: 10px; border: none; color: white; width: 100%; cursor: pointer; display: block; }
+        .btn-show-display:hover { background: #8e44ad; }
+
+        .player-list { text-align: left; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px; max-height: 350px; overflow-y: auto; }
+        .player-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #ddd; }
+        .player-item.eliminated-row { background: #fce4e4; opacity: 0.7; }
+        .player-info { display: flex; flex-direction: column; }
+        .player-name-text { font-weight: bold; font-size: 16px; }
+        .time-elapsed { font-size: 12px; color: #2980b9; font-weight: bold; margin-top: 2px; }
+        
+        .action-btns { display: flex; gap: 5px; align-items: center; }
+        .btn-kick { background: #e74c3c; padding: 6px 12px; font-size: 13px; border-radius: 4px; border: none; color: white; cursor: pointer; width: auto; font-weight: bold; }
+        .btn-revive { background: #2ecc71; padding: 6px 12px; font-size: 13px; border-radius: 4px; border: none; color: white; cursor: pointer; width: auto; font-weight: bold; }
+
+        .badge { background: #7f8c8d; color: white; padding: 5px 12px; border-radius: 4px; font-size: 14px; font-weight: bold; max-width: 180px; word-break: break-all; }
+        .status-badge { font-size: 12px; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px;}
+        .status-lock { background: #e74c3c; color: white; }
+        .status-typing { background: #f39c12; color: white; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h2>ĐIỀU KHIỂN CHÍNH</h2>
-        <select id="mode" style="width:100%; padding:10px;">
-            <option value="MCQ">Trắc nghiệm</option>
-            <option value="SHORT_ANS">Tự luận</option>
-        </select>
-        <button class="btn-main" onclick="startQuiz()">▶ BẮT ĐẦU CÂU HỎI</button>
-        <div class="timer-display" id="timer">--</div>
-        
-        <div id="control-panel">
-            <input type="text" id="ans-input" placeholder="Nhập đáp án đúng..." style="width:100%; padding:10px;">
-            <button class="btn-main" style="background:#8e44ad;" onclick="revealAnswer()">👁️ SHOW ĐÁP ÁN LÊN MÀN HÌNH</button>
+        <h2>BẢN ĐIỀU KHIỂN (CONTROLLER ADMIN)</h2>
+        <div class="quiz-setup">
+            <label>Loại câu hỏi (Chế độ chơi):</label>
+            <select id="input-quiz-type">
+                <option value="MCQ">Trắc nghiệm lựa chọn (A, B, C, D)</option>
+                <option value="SHORT_ANS">Trả lời nhanh (Nhập tự do)</option>
+            </select>
+            
+            <label>Nội dung câu hỏi:</label>
+            <input type="text" id="input-question" value="Thủ đô của Việt Nam là gì?">
+            
+            <div class="inline-group">
+                <div style="flex: 1;"><label>Đáp án A:</label><input type="text" id="ans-A" value="TP. Hồ Chí Minh"></div>
+                <div style="flex: 1;"><label>Đáp án B:</label><input type="text" id="ans-B" value="Hà Nội"></div>
+            </div>
+            <div class="inline-group">
+                <div style="flex: 1;"><label>Đáp án C:</label><input type="text" id="ans-C" value="Đà Nẵng"></div>
+                <div style="flex: 1;"><label>Đáp án D:</label><input type="text" id="ans-D" value="Cần Thơ"></div>
+            </div>
+
+            <div class="inline-group">
+                <div>
+                    <label>Thời gian (giây):</label>
+                    <input type="number" id="input-timer" value="15" min="5" style="width: 120px;">
+                </div>
+                <div style="flex-grow: 1;">
+                    <label>Số điểm tối đa:</label>
+                    <input type="number" id="input-question-score" value="100" min="1" style="width: 100%;">
+                </div>
+            </div>
         </div>
 
-        <div class="soundboard">
-            <button class="sound-btn" style="background:#3498db" onclick="playSnd('goldenbell_game_question_show_loop.mp3')">📢 Hiện CH</button>
-            <button class="sound-btn" style="background:#3498db" onclick="playSnd('goldenbell_game_contestant_count.mp3')">👥 Số người</button>
-            <button class="sound-btn" style="background:#e67e22" onclick="playSnd('goldenbell_game_think_clock.mp3')">⏳ Tính giờ</button>
-            <button class="sound-btn" style="background:#9b59b6" onclick="playSnd('goldenbell_game_contestant_answer_reveal.mp3')">👁️ Xem đáp án</button>
-            <button class="sound-btn" style="background:#2ecc71; grid-column:span 2" onclick="playSnd('goldenbell_game_congratulations.mp3')">🎉 Đúng</button>
+        <button id="btn-start-quiz" onclick="startQuiz()">▶ PHÁT ĐỀ & BẮT ĐẦU TÍNH GIỜ</button>
+        <div class="timer-banner" id="control-timer">Thời gian câu hỏi: --</div>
+
+        <div class="control-zone-box">
+            <b style="color: #2980b9; font-size: 15px;">🛠️ BƯỚC 1: CHỌN ĐÁP ÁN ĐÚNG (NẾU CHƠI TRẮC NGHIỆM):</b>
+            <div class="btn-grade-group">
+                <button class="btn-g bg-A" onclick="selectMcqAnswer('A')">A</button>
+                <button class="btn-g bg-B" onclick="selectMcqAnswer('B')">B</button>
+                <button class="btn-g bg-C" onclick="selectMcqAnswer('C')">C</button>
+                <button class="btn-g bg-D" onclick="selectMcqAnswer('D')">D</button>
+            </div>
+            
+            <hr style="border: 0; border-top: 1px dashed #ccc; margin: 15px 0;">
+            
+            <b style="color: #d35400; font-size: 15px;">✍️ BƯỚC 1B: NHẬP ĐÁP ÁN ĐÚNG (NẾU CHƠI TỰ LUẬN):</b>
+            <input type="text" id="input-correct-short" placeholder="Gõ câu trả lời đúng vào đây..." style="margin-top: 5px;">
+
+            <hr style="border: 0; border-top: 1px dashed #ccc; margin: 15px 0;">
+
+            <b style="color: #8e44ad; font-size: 15px;">📢 BƯỚC 2: CÔNG BỐ KẾT QUẢ LÊN MÀN HÌNH LỚN:</b>
+            <button id="btn-trigger-reveal" class="btn-show-display" onclick="sendRevealCommand()">👁️ BẤM ĐỂ SHOW ĐÁP ÁN LÊN DISPLAY</button>
         </div>
+
+        <h3>Thí sinh (<span id="player-count">0</span>)</h3>
+        <div class="player-list" id="players-display"></div>
     </div>
 
     <script>
-        const channel = new BroadcastChannel('quiz_channel');
-        let currentAudio = null;
+        const channel = new BroadcastChannel('quiz_score_engine_channel');
+        let playersMap = {}; 
+        let currentMode = 'MCQ'; 
+        let countdownInterval = null;
+        let currentMaxDuration = 15;
+        let currentMaxScore = 100;
+        let finalCorrectAnswer = '';
+
+        setInterval(() => { 
+            channel.postMessage({ type: 'CONTROLLER_PING' }); 
+            channel.postMessage({ type: 'SYNC_DISPLAY_DATA', players: playersMap });
+        }, 500);
 
         function startQuiz() {
-            let duration = 15;
-            let timestamp = Date.now();
-            channel.postMessage({ type: 'START', duration, timestamp, mode: document.getElementById('mode').value });
+            clearInterval(countdownInterval);
+            finalCorrectAnswer = '';
+            document.getElementById('input-correct-short').value = '';
+
+            currentMode = document.getElementById('input-quiz-type').value;
+            const question = document.getElementById('input-question').value;
+            currentMaxDuration = parseInt(document.getElementById('input-timer').value) || 15;
+            currentMaxScore = parseFloat(document.getElementById('input-question-score').value) || 100;
+            
+            let answers = {
+                A: document.getElementById('ans-A').value,
+                B: document.getElementById('ans-B').value,
+                C: document.getElementById('ans-C').value,
+                D: document.getElementById('ans-D').value
+            };
+
+            for (let p in playersMap) { 
+                playersMap[p].answer = 'Chưa trả lời'; 
+                playersMap[p].isLocked = false;
+                playersMap[p].timeTaken = null;
+                playersMap[p].calculatedScore = 0;
+            }
+            updateControllerUI();
+
+            const timestamp = Date.now(); 
+            channel.postMessage({ type: 'START_QUIZ', mode: currentMode, question, answers, duration: currentMaxDuration, timestamp });
+
+            let timeLeft = currentMaxDuration;
+            document.getElementById('btn-start-quiz').disabled = true;
+            document.getElementById('control-timer').innerText = `⏳ CÒN LẠI: ${timeLeft}s`;
+
+            countdownInterval = setInterval(() => {
+                timeLeft--;
+                if (timeLeft <= 0) {
+                    clearInterval(countdownInterval);
+                    document.getElementById('control-timer').innerText = "🛑 HẾT GIỜ - ĐÃ KHÓA ĐÁP ÁN!";
+                    document.getElementById('btn-start-quiz').disabled = false;
+                    channel.postMessage({ type: 'TIME_UP', duration: currentMaxDuration });
+                } else {
+                    document.getElementById('control-timer').innerText = `⏳ CÒN LẠI: ${timeLeft}s`;
+                }
+            }, 1000);
         }
 
-        function revealAnswer() {
-            channel.postMessage({ type: 'REVEAL', ans: document.getElementById('ans-input').value });
+        function selectMcqAnswer(key) {
+            clearInterval(countdownInterval);
+            finalCorrectAnswer = key;
+            document.getElementById('control-timer').innerText = `🎯 Đã chọn Trắc nghiệm [ ${key} ]. Sẵn sàng bấm nút SHOW màu tím!`;
+            document.getElementById('btn-start-quiz').disabled = false;
+            channel.postMessage({ type: 'TIME_UP', duration: currentMaxDuration });
         }
 
-        function playSnd(file) {
-            if(currentAudio) currentAudio.pause();
-            currentAudio = new Audio('Rung Chuông Vàng/' + file);
-            currentAudio.play();
+        function sendRevealCommand() {
+            currentMode = document.getElementById('input-quiz-type').value;
+            let finalAns = '';
+
+            if (currentMode === 'MCQ') {
+                if (!finalCorrectAnswer) { alert("Vui lòng click chọn phương án đúng A, B, C hoặc D ở Bước 1 trước!"); return; }
+                finalAns = finalCorrectAnswer;
+            } else {
+                const textAns = document.getElementById('input-correct-short').value.trim();
+                if (!textAns) { alert("Vui lòng nhập từ khóa đáp án tự luận đúng ở Bước 1B trước!"); return; }
+                finalAns = textAns;
+            }
+
+            channel.postMessage({ type: 'COMMAND_DISPLAY_REVEAL', correctAns: finalAns, mode: currentMode });
+            document.getElementById('control-timer').innerText = `🎉 ĐÃ LỆNH SHOW ĐÁP ÁN [ ${finalAns} ] LÊN DISPLAY!`;
+        }
+
+        function kickPlayer(name) {
+            if(playersMap[name]) { playersMap[name].isEliminated = true; playersMap[name].answer = 'Bị Loại ☠️'; updateControllerUI(); }
+        }
+        function revivePlayer(name) {
+            if(playersMap[name]) { playersMap[name].isEliminated = false; playersMap[name].answer = 'Chưa trả lời'; updateControllerUI(); }
+        }
+
+        channel.onmessage = (event) => {
+            const data = event.data;
+            if (data.type === 'PLAYER_JOIN') {
+                if (!playersMap[data.name]) {
+                    playersMap[data.name] = { answer: 'Chưa trả lời', isLocked: false, timeTaken: null, calculatedScore: 0, isEliminated: false };
+                }
+                updateControllerUI();
+            } else if (data.type === 'PLAYER_SUBMIT') {
+                if (playersMap[data.name] && !playersMap[data.name].isEliminated) {
+                    playersMap[data.name].answer = data.answer; 
+                    playersMap[data.name].isLocked = data.isLocked;
+                    
+                    // SỬA LỖI ĐỒNG BỘ THỜI GIAN: Nhận trực tiếp thời gian thực nhận từ máy con gửi lên
+                    playersMap[data.name].timeTaken = parseFloat(data.timeTaken || 0).toFixed(2); 
+                    
+                    if(data.isLocked) {
+                        let ratio = 1 - (parseFloat(data.timeTaken) / currentMaxDuration);
+                        if (ratio < 0) ratio = 0; 
+                        playersMap[data.name].calculatedScore = (ratio * currentMaxScore).toFixed(2);
+                    } else {
+                        playersMap[data.name].calculatedScore = 0;
+                    }
+                    updateControllerUI();
+                }
+            }
+        };
+
+        function updateControllerUI() {
+            const listContainer = document.getElementById('players-display');
+            listContainer.innerHTML = '';
+            let totalPlayers = 0;
+
+            for (let name in playersMap) {
+                totalPlayers++;
+                const p = playersMap[name];
+                const item = document.createElement('div');
+                item.className = `player-item ${p.isEliminated ? 'eliminated-row' : ''}`;
+                
+                let badgeStyle = p.isEliminated ? "background:#c0392b" : (p.answer !== 'Chưa trả lời' ? "background:#2ecc71" : "background:#7f8c8d");
+                let statusIcon = p.isLocked ? `<span class="status-badge status-lock">🔒 Đã Chốt</span>` : `<span class="status-badge status-typing">✍️ Nhập...</span>`;
+                if (p.answer === 'Chưa trả lời' || p.isEliminated) statusIcon = '';
+
+                let actionArea = p.isEliminated 
+                    ? `<button class="btn-revive" onclick="revivePlayer('${name}')">❤️ Hồi sinh</button>` 
+                    : `<button class="btn-kick" onclick="kickPlayer('${name}')">💥 Loại</button>`;
+
+                item.innerHTML = `
+                    <div class="player-info">
+                        <span class="player-name-text">👤 ${name} ${p.isEliminated ? '<b>(LOẠI)</b>' : statusIcon}</span>
+                        ${!p.isEliminated && p.answer !== 'Chưa trả lời' ? `<span class="time-elapsed">⏱️ Trả lời lúc: ${p.timeTaken}s | 🎯 Tạm tính: ${p.calculatedScore}đ</span>` : ''}
+                    </div>
+                    <div class="action-btns"><span class="badge" style="${badgeStyle}">${p.answer}</span>${actionArea}</div>
+                `;
+                listContainer.appendChild(item);
+            }
+            document.getElementById('player-count').innerText = totalPlayers;
         }
     </script>
 </body>

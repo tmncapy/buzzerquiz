@@ -1,135 +1,25 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Màn hình Trình Chiếu Tổng Quan</title>
-    <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background-color: #1a252f; color: white; margin: 0; padding: 20px; min-height: 100vh; }
-        .container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
-        .main-panel, .side-panel { background: #2c3e50; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        h1, h2 { margin-top: 0; text-align: center; color: #ecf0f1; }
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 25px; }
-        .stat-box { background: #34495e; padding: 15px; border-radius: 8px; text-align: center; border-bottom: 4px solid #2ecc71; }
-        .stat-box.elim { border-color: #e74c3c; }
-        .stat-box.total { border-color: #3498db; }
-        .stat-num { font-size: 36px; font-weight: bold; margin-top: 5px; }
-        .question-banner { background: #34495e; padding: 20px; border-radius: 8px; font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 25px; border-left: 8px solid #f1c40f; }
-        
-        .player-monitor-list { display: flex; flex-direction: column; gap: 10px; max-height: 650px; overflow-y: auto; }
-        .p-row { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 6px; background: #34495e; border-left: 5px solid #7f8c8d; }
-        .p-row.state-eliminated { border-left-color: #e74c3c; opacity: 0.3; background: #243342 !important; }
-        .p-name { font-weight: bold; font-size: 18px; }
-        .p-ans-badge { font-weight: bold; font-size: 16px; background: #3498db; padding: 6px 14px; border-radius: 20px; max-width: 220px; text-align: center; color: white; word-break: break-all; }
-        .p-ans-badge.locked { background: #e67e22; }
-        .p-ans-badge.not-yet { background: #7f8c8d; }
-    </style>
-</head>
-<body>
-    <h1 style="font-size: 32px; margin-bottom: 20px;">🏟️ LIVE SCREEN - ĐẤU TRƯỜNG QUIZ</h1>
-    <div class="container">
-        <div class="main-panel">
-            <div class="stats-grid">
-                <div class="stat-box total"><div>Tổng số Player</div><div class="stat-num" id="view-total">0</div></div>
-                <div class="stat-box"><div>Trên sàn đấu</div><div class="stat-num" id="view-live" style="color: #2ecc71;">0</div></div>
-                <div class="stat-box elim"><div>Đã bị loại</div><div class="stat-num" id="view-dead" style="color: #e74c3c;">0</div></div>
-            </div>
-            <div class="question-banner" id="view-question">Đang đợi phát câu hỏi...</div>
-            <h2 id="view-answer-banner" style="color: #f1c40f; background: #243342; padding: 15px; border-radius: 8px; display:none;"></h2>
-        </div>
-        <div class="side-panel">
-            <h2>SÀN ĐẤU</h2>
-            <div class="player-monitor-list" id="view-players-list"></div>
-        </div>
-    </div>
-
+    <title>Player</title>
     <script>
-        const channel = new BroadcastChannel('quiz_score_engine_channel');
-        let dPlayersMap = {};
-        let currentMode = 'MCQ';
-        let isRevealed = false; 
-        let globalCorrectAns = '';
+        const channel = new BroadcastChannel('quiz_channel');
+        let startTime = 0;
 
-        channel.onmessage = (event) => {
-            const data = event.data;
-            if (data.type === 'START_QUIZ') {
-                currentMode = data.mode;
-                isRevealed = false; 
-                globalCorrectAns = '';
-                document.getElementById('view-question').innerText = `❓ ${data.question}`;
-                document.getElementById('view-answer-banner').style.display = 'none';
-                renderDisplayUI();
-            } 
-            else if (data.type === 'SYNC_DISPLAY_DATA') {
-                if (!isRevealed) {
-                    dPlayersMap = data.players;
-                    renderDisplayUI();
-                }
-            }
-            else if (data.type === 'COMMAND_DISPLAY_REVEAL') {
-                isRevealed = true;
-                globalCorrectAns = data.correctAns;
-                
-                const banner = document.getElementById('view-answer-banner');
-                banner.innerText = `🎉 ĐÁP ÁN CHÍNH XÁC: ${globalCorrectAns.toUpperCase()}`;
-                banner.style.display = 'block';
-                
-                renderDisplayUI(); 
+        channel.onmessage = (e) => {
+            if(e.data.type === 'START') {
+                startTime = e.data.timestamp;
+                alert("Câu hỏi đã bắt đầu!");
             }
         };
 
-        function renderDisplayUI() {
-            const listContainer = document.getElementById('view-players-list');
-            listContainer.innerHTML = '';
-            let total = 0; let live = 0; let dead = 0;
-
-            for(let name in dPlayersMap) {
-                total++;
-                const p = dPlayersMap[name];
-                if (p.isEliminated) { dead++; } else { live++; }
-
-                const row = document.createElement('div');
-                row.className = `p-row ${p.isEliminated ? 'state-eliminated' : ''}`;
-                
-                let ansBadge = '';
-                if (!p.isEliminated) {
-                    if (p.answer === 'Chưa trả lời') {
-                        ansBadge = `<span class="p-ans-badge not-yet">...</span>`;
-                    } else {
-                        if (!isRevealed) {
-                            ansBadge = `<span class="p-ans-badge locked">${p.isLocked ? "🔒 Đã Chốt" : "✍️ Đang nhập"}</span>`;
-                        } else {
-                            // Khi lật mở đáp án
-                            ansBadge = `<span class="p-ans-badge" style="background:#2ecc71; color:#111">${p.answer}</span>`;
-                            
-                            if (currentMode === 'MCQ') {
-                                if (p.answer === globalCorrectAns) {
-                                    row.style.backgroundColor = "#27ae60"; // Đúng màu xanh
-                                } else {
-                                    row.style.backgroundColor = "#c0392b"; // Sai màu đỏ
-                                }
-                            } else {
-                                // Nếu là tự luận, so khớp chuỗi chữ viết thường
-                                if (p.answer.toLowerCase().trim() === globalCorrectAns.toLowerCase().trim()) {
-                                    row.style.backgroundColor = "#27ae60";
-                                } else {
-                                    row.style.backgroundColor = "#c0392b";
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    ansBadge = `<span class="p-ans-badge" style="background:#e74c3c">LOẠI</span>`;
-                }
-
-                row.innerHTML = `<div class="p-name">👤 ${name}</div>${ansBadge}`;
-                listContainer.appendChild(row);
-            }
-            document.getElementById('view-total').innerText = total;
-            document.getElementById('view-live').innerText = live;
-            document.getElementById('view-dead').innerText = dead;
+        function submit() {
+            let timeTaken = (Date.now() - startTime) / 1000;
+            channel.postMessage({ type: 'SUBMIT', time: timeTaken });
         }
     </script>
+</head>
+<body>
+    <button onclick="submit()">GỬI ĐÁP ÁN</button>
 </body>
 </html>

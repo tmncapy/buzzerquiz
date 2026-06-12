@@ -15,6 +15,7 @@
         input { padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 10px; width: 100%; }
         .screen { display: none; }
         .active { display: block; }
+        .question-box { background: #2c3e50; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; font-size: 20px; font-weight: bold; position: relative; overflow: hidden; }
         .btn-group { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 10px; }
         
         .btn-ans { font-size: 28px; font-weight: bold; padding: 30px; color: white; text-align: center; justify-content: center; display: flex; align-items: center; border-radius: 12px; transition: transform 0.2s; border: none;}
@@ -46,6 +47,7 @@
             </div>
             
             <div id="main-play-zone">
+                <div class="question-box" id="display-question">Đang đợi câu hỏi từ Controller...</div>
                 <p id="player-status" style="font-size: 16px; font-weight: 500; color: #2c3e50; margin-bottom: 20px; background:#e8f4f8; padding:10px; border-radius:6px;">Hệ thống đang đóng. Vui lòng chờ lệnh...</p>
                 
                 <div id="player-mcq-box" class="btn-group">
@@ -147,7 +149,6 @@
 
             if (iamEliminated) return;
 
-            // Nhận lệnh khởi tạo và tính giờ từ Admin
             if (data.type === 'START_QUIZ') {
                 currentMode = data.mode;
                 currentMaxDuration = data.duration;
@@ -162,12 +163,16 @@
                 document.getElementById('player-action-area').style.display = 'block';
                 document.getElementById('btn-lock-answer').style.display = 'inline-block';
                 document.getElementById('btn-unlock-answer').style.display = 'none';
+                document.getElementById('display-question').innerText = data.question || "Vui lòng nhìn lên màn hình chính...";
 
                 const txtInput = document.getElementById('player-text-input');
                 txtInput.classList.remove('locked');
                 txtInput.readOnly = false;
 
                 resetMCQButtonStyles();
+                document.querySelectorAll('.btn-ans').forEach(btn => {
+                    btn.classList.remove('fade-out');
+                });
 
                 if (currentMode === 'MCQ') {
                     document.getElementById('player-mcq-box').style.display = 'grid';
@@ -182,11 +187,42 @@
                     document.getElementById('player-status').innerText = "Gõ câu trả lời rồi nhấn Enter để Chốt.";
                 }
                 
-                // Khởi chạy đồng hồ tính giờ phía người chơi
                 startPlayerTimer(data.duration);
 
             } else if (data.type === 'TIME_UP') {
                 forceLockOnTimeUp(data.duration);
+            }
+            else if (data.type === 'SHOW_RESULT') {
+                timeIsOverGlobal = true;
+                clearInterval(countdownInterval);
+                document.getElementById('player-action-area').style.display = 'none';
+                enableMCQButtons(false);
+
+                const correct = data.correctAns;
+                const chosen = playerTempAnswer;
+
+                if (currentMode === 'MCQ') {
+                    document.querySelectorAll('.btn-ans').forEach(btn => {
+                        const option = btn.id.replace('btn-ans-', '');
+                        if (option === chosen) {
+                            if (chosen === correct) {
+                                document.getElementById('player-status').innerText = `🎉 CHÍNH XÁC! Bạn trả lời đúng trong ${savedTimeTaken}s.`;
+                            } else {
+                                document.getElementById('player-status').innerText = `❌ SAI RỒI! Bạn chọn ${chosen} | Đáp án: ${correct}.`;
+                            }
+                        }
+                        if (option !== correct && option !== chosen) {
+                            btn.classList.add('fade-out');
+                        }
+                    });
+                } else {
+                    let isRight = (chosen.toLowerCase().trim() === correct.toLowerCase().trim());
+                    if(isRight) {
+                        document.getElementById('player-status').innerText = `🎉 CHÍNH XÁC! Cụm từ đúng: ${correct}`;
+                    } else {
+                        document.getElementById('player-status').innerText = `❌ CHƯA ĐÚNG! Bạn chốt: "${chosen}" | Đáp án: "${correct}"`;
+                    }
+                }
             }
         };
 

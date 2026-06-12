@@ -74,7 +74,7 @@
             </select>
             
             <label>Nội dung câu hỏi:</label>
-            <input type="text" id="input-question" value="Vui lòng quan sát câu hỏi trên máy chiếu...">
+            <input type="text" id="input-question" value="Quan sát câu hỏi hiển thị trên máy chiếu...">
             
             <div class="inline-group">
                 <div style="flex: 1;"><label>Đáp án A:</label><input type="text" id="ans-A" value="Đáp án A"></div>
@@ -112,7 +112,7 @@
             <hr style="border: 0; border-top: 1px dashed #ccc; margin: 15px 0;">
             
             <b style="color: #d35400; font-size: 15px;">✍️ BƯỚC 1B: NHẬP ĐÁP ÁN ĐÚNG (NẾU CHƠI TỰ LUẬN):</b>
-            <input type="text" id="input-correct-short" placeholder="Gõ câu trả lời đúng vào đây..." style="margin-top: 5px;">
+            <input type="text" id="input-correct-short" placeholder="Gõ từ khóa chính xác vào đây..." style="margin-top: 5px;">
 
             <hr style="border: 0; border-top: 1px dashed #ccc; margin: 15px 0;">
 
@@ -147,15 +147,19 @@
         let finalCorrectAnswer = '';
         let isDisplayShowingStats = false; 
         let questionCounter = 0;
+        let isQuizRunning = false;
 
-        // Cơ chế đồng bộ dữ liệu liên tục sang màn hình hiển thị lớn
+        // Định kỳ đồng bộ thông tin sang Display
         setInterval(() => { 
             channel.postMessage({ type: 'CONTROLLER_PING' }); 
-            channel.postMessage({ type: 'SYNC_DISPLAY_DATA', players: playersMap, showStatsMode: isDisplayShowingStats });
-        }, 500);
+            if (!isQuizRunning) {
+                channel.postMessage({ type: 'SYNC_DISPLAY_DATA', players: playersMap, showStatsMode: isDisplayShowingStats });
+            }
+        }, 600);
 
         function startQuiz() {
             clearInterval(countdownInterval);
+            isQuizRunning = true;
             finalCorrectAnswer = '';
             document.getElementById('input-correct-short').value = '';
             
@@ -185,7 +189,6 @@
             updateControllerUI();
 
             const timestamp = Date.now(); 
-            // GỬI ĐẦY ĐỦ THAM SỐ: Đảm bảo index.html nhận đủ dữ liệu và không bị crash
             channel.postMessage({ 
                 type: 'START_QUIZ', 
                 mode: currentMode, 
@@ -202,45 +205,72 @@
             countdownInterval = setInterval(() => {
                 timeLeft--;
                 if (timeLeft <= 0) {
-                    clearInterval(countdownInterval);
-                    document.getElementById('control-timer').innerText = "🛑 HẾT GIỜ - ĐÃ KHÓA ĐÁP ÁN!";
-                    document.getElementById('btn-start-quiz').disabled = false;
-                    channel.postMessage({ type: 'TIME_UP', duration: currentMaxDuration });
+                    endQuizSession();
                 } else {
                     document.getElementById('control-timer').innerText = `⏳ CÒN LẠI: ${timeLeft}s`;
                 }
             }, 1000);
         }
 
-        function selectMcqAnswer(key) {
+        function endQuizSession() {
             clearInterval(countdownInterval);
-            finalCorrectAnswer = key;
-            document.getElementById('control-timer').innerText = `🎯 Đã chọn Trắc nghiệm [ ${key} ]. Sẵn sàng bấm nút SHOW màu tím!`;
+            isQuizRunning = false;
+            document.getElementById('control-timer').innerText = "🛑 HẾT GIỜ - ĐÃ KHÓA ĐÁP ÁN!";
             document.getElementById('btn-start-quiz').disabled = false;
             channel.postMessage({ type: 'TIME_UP', duration: currentMaxDuration });
-            saveQuestionHistory(key);
+            setTimeout(() => {
+                channel.postMessage({ type: 'SYNC_DISPLAY_DATA', players: playersMap, showStatsMode: isDisplayShowingStats });
+            }, 200);
+        }
+
+        function selectMcqAnswer(key) {
+            if(isQuizRunning) endQuizSession();
+            finalCorrectAnswer = key;
+            document.getElementById('control-timer').innerText = `🎯 Đã chọn Trắc nghiệm [ ${key} ]. Hãy nhấn nút SHOW màu tím!`;
         }
 
         function sendRevealCommand() {
+            if(isQuizRunning) endQuizSession();
             currentMode = document.getElementById('input-quiz-type').value;
             let finalAns = '';
 
             if (currentMode === 'MCQ') {
-                if (!finalCorrectAnswer) { alert("Vui lòng click chọn phương án đúng A, B, C hoặc D ở Bước 1 trước!"); return; }
+                if (!finalCorrectAnswer) { alert("Vui lòng chọn phương án đúng A, B, C hoặc D trước!"); return; }
                 finalAns = finalCorrectAnswer;
             } else {
                 const textAns = document.getElementById('input-correct-short').value.trim();
-                if (!textAns) { alert("Vui lòng nhập từ khóa đáp án tự luận đúng ở Bước 1B trước!"); return; }
+                if (!textAns) { alert("Vui lòng nhập từ khóa tự luận đúng ở Bước 1B!"); return; }
                 finalAns = textAns;
-                saveQuestionHistory(finalAns);
             }
 
-            channel.postMessage({ type: 'COMMAND_DISPLAY_REVEAL', correctAns: finalAns, mode: currentMode });
-            
-            // Đồng thời kích hoạt hiệu ứng hiển thị kết quả đúng/sai trên các thiết bị máy con
+            // Thực hiện tính toán cộng dồn điểm tích lũy vào hệ thống dữ liệu gốc
+            for(let name in playersMap) {
+                let p = playersMap[name];
+                if(p.isEliminated) continue;
+
+                let isRight = false;
+                if(currentMode === 'MCQ') {
+                    isRight = (p.answer === finalAns);
+                } else {
+                    isRight = (p.answer.toLowerCase().trim() === finalAns.toLowerCase().trim());
+                }
+
+                let currentPoints = isRight && p.isLocked ? parseFloat(p.calculatedScore || 0) : 0;
+                let currentSecs = p.isLocked && p.timeTaken ? parseFloat(p.timeTaken) : 0;
+
+                let oldScore = parseFloat(p.totalScore || 0);
+                let oldTime = parseFloat(p.totalTime || 0);
+
+                p.totalScore = (oldScore + currentPoints).toFixed(2);
+                p.totalTime = (oldTime + currentSecs).toFixed(2);
+            }
+
+            saveQuestionHistory(finalAns);
+
+            channel.postMessage({ type: 'COMMAND_DISPLAY_REVEAL', correctAns: finalAns, mode: currentMode, players: playersMap });
             channel.postMessage({ type: 'SHOW_RESULT', correctAns: finalAns });
-            
-            document.getElementById('control-timer').innerText = `🎉 ĐÃ LỆNH SHOW ĐÁP ÁN [ ${finalAns} ] LÊN DISPLAY & MÁY CON!`;
+            document.getElementById('control-timer').innerText = `🎉 ĐÃ SHOW ĐÁP ÁN [ ${finalAns} ] & CẬP NHẬT BXH!`;
+            updateControllerUI();
         }
 
         function toggleDisplayStats() {
@@ -253,6 +283,7 @@
                 btn.classList.remove('active-mode');
                 btn.innerText = "🏆 SHOW BẢNG TỔNG ĐIỂM / TIME";
             }
+            channel.postMessage({ type: 'SYNC_DISPLAY_DATA', players: playersMap, showStatsMode: isDisplayShowingStats });
         }
 
         function saveQuestionHistory(correctAns) {
@@ -284,22 +315,14 @@
 
         function showHistory(name) {
             const p = playersMap[name];
-            document.getElementById('modal-player-title').innerText = `📜 Lịch sử trả lời: ${name}`;
+            document.getElementById('modal-player-title').innerText = ` Lịch sử: ${name}`;
             const body = document.getElementById('modal-history-body');
             
             if(!p.history || p.history.length === 0) {
                 body.innerHTML = `<p style="color:#7f8c8d; font-style:italic; text-align:center; padding:20px 0;">Thí sinh chưa có lịch sử câu hỏi nào.</p>`;
             } else {
                 let html = `<table class="history-table">
-                    <thead>
-                        <tr>
-                            <th>Phiên chơi</th>
-                            <th>Đã chốt</th>
-                            <th>Đáp án đúng</th>
-                            <th>Kết quả</th>
-                            <th>Thời gian</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th>Phiên chơi</th><th>Đã chốt</th><th>Đáp án đúng</th><th>Kết quả</th><th>Thời gian</th></tr></thead>
                     <tbody>`;
                 p.history.forEach(h => {
                     html += `<tr>
@@ -316,34 +339,18 @@
             document.getElementById('history-modal').style.display = 'flex';
         }
 
-        function closeHistoryModal() {
-            document.getElementById('history-modal').style.display = 'none';
-        }
-
-        function kickPlayer(name) {
-            if(playersMap[name]) { playersMap[name].isEliminated = true; playersMap[name].answer = 'Bị Loại ☠️'; updateControllerUI(); }
-        }
-        function revivePlayer(name) {
-            if(playersMap[name]) { playersMap[name].isEliminated = false; playersMap[name].answer = 'Chưa trả lời'; updateControllerUI(); }
-        }
-
-        function updatePlayerStatsManual(name, field, value) {
-            if (playersMap[name]) { playersMap[name][field] = value; }
-        }
+        function closeHistoryModal() { document.getElementById('history-modal').style.display = 'none'; }
+        function kickPlayer(name) { if(playersMap[name]) { playersMap[name].isEliminated = true; playersMap[name].answer = 'Bị Loại ☠️'; updateControllerUI(); } }
+        function revivePlayer(name) { if(playersMap[name]) { playersMap[name].isEliminated = false; playersMap[name].answer = 'Chưa trả lời'; updateControllerUI(); } }
+        function updatePlayerStatsManual(name, field, value) { if (playersMap[name]) { playersMap[name][field] = value; } }
 
         channel.onmessage = (event) => {
             const data = event.data;
             if (data.type === 'PLAYER_JOIN') {
                 if (!playersMap[data.name]) {
                     playersMap[data.name] = { 
-                        answer: 'Chưa trả lời', 
-                        isLocked: false, 
-                        timeTaken: null, 
-                        calculatedScore: 0, 
-                        isEliminated: false,
-                        totalScore: '0', 
-                        totalTime: '0',
-                        history: []
+                        answer: 'Chưa trả lời', isLocked: false, timeTaken: null, calculatedScore: 0, isEliminated: false,
+                        totalScore: '0', totalTime: '0', history: []
                     };
                 }
                 updateControllerUI();
@@ -368,9 +375,6 @@
         function updateControllerUI() {
             const listContainer = document.getElementById('players-display');
             const activeId = document.activeElement ? document.activeElement.id : null;
-            const selectionStart = document.activeElement ? document.activeElement.selectionStart : null;
-            const selectionEnd = document.activeElement ? document.activeElement.selectionEnd : null;
-
             listContainer.innerHTML = '';
             let totalPlayers = 0;
 
@@ -396,37 +400,25 @@
                         <span class="player-name-text">👤 ${name} ${p.isEliminated ? '<b>(LOẠI)</b>' : statusIcon}</span>
                         ${!p.isEliminated && p.answer !== 'Chưa trả lời' ? `<span class="time-elapsed">⏱️ Lúc: ${p.timeTaken}s | 🎯 Tính: ${p.calculatedScore}đ</span>` : ''}
                     </div>
-                    
                     <div class="player-edit-inputs">
                         <div>
                             <label>Tổng Điểm</label>
                             <input type="text" id="${scoreInputId}" class="input-stat-edit" value="${p.totalScore ?? '0'}" oninput="updatePlayerStatsManual('${name}', 'totalScore', this.value)">
                         </div>
                         <div>
-                            <label>Tổng Time (s)</label>
+                            <label>Tổng Time</label>
                             <input type="text" id="${timeInputId}" class="input-stat-edit" value="${p.totalTime ?? '0'}" oninput="updatePlayerStatsManual('${name}', 'totalTime', this.value)">
                         </div>
                     </div>
-
                     <div class="action-btns">
                         <button class="btn-history" onclick="showHistory('${name}')">📜 Lịch sử</button>
                         <span class="badge" style="${badgeStyle}">${p.answer}</span>
                         ${actionArea}
-                    </div>
-                `;
+                    </div>`;
                 listContainer.appendChild(item);
             }
             document.getElementById('player-count').innerText = totalPlayers;
-
-            if (activeId) {
-                const inputEl = document.getElementById(activeId);
-                if (inputEl) {
-                    inputEl.focus();
-                    if (selectionStart !== null && selectionEnd !== null) {
-                        inputEl.setSelectionRange(selectionStart, selectionEnd);
-                    }
-                }
-            }
+            if (activeId) { const el = document.getElementById(activeId); if (el) el.focus(); }
         }
     </script>
 </body>

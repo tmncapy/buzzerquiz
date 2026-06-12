@@ -12,105 +12,214 @@
         h1, h2 { margin-top: 0; text-align: center; color: #ecf0f1; }
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 25px; }
         .stat-box { background: #34495e; padding: 15px; border-radius: 8px; text-align: center; border-bottom: 4px solid #2ecc71; }
-        .stat-box.elim { border-color: #e74c3c; }
-        .stat-box.total { border-color: #3498db; }
-        .stat-num { font-size: 36px; font-weight: bold; margin-top: 5px; }
-        .question-banner { background: #34495e; padding: 20px; border-radius: 8px; font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 25px; border-left: 8px solid #f1c40f; }
+        .stat-box.live { border-bottom-color: #3498db; }
+        .stat-box.dead { border-bottom-color: #e74c3c; }
+        .stat-num { font-size: 32px; font-weight: bold; margin-top: 5px; }
         
-        .player-monitor-list { display: flex; flex-direction: column; gap: 10px; max-height: 650px; overflow-y: auto; }
-        .p-row { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 6px; background: #34495e; border-left: 5px solid #7f8c8d; }
-        .p-row.state-eliminated { border-left-color: #e74c3c; opacity: 0.3; background: #243342 !important; }
-        .p-name { font-weight: bold; font-size: 18px; }
-        .p-ans-badge { font-weight: bold; font-size: 16px; background: #3498db; padding: 6px 14px; border-radius: 20px; max-width: 220px; text-align: center; color: white; word-break: break-all; }
-        .p-ans-badge.locked { background: #e67e22; }
-        .p-ans-badge.not-yet { background: #7f8c8d; }
+        .question-box { background: #34495e; padding: 25px; border-radius: 8px; font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 20px; border-left: 8px solid #f1c40f; min-height: 100px; display: flex; align-items: center; justify-content: center; }
+        .mcq-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .mcq-item { background: #34495e; padding: 18px; border-radius: 8px; font-size: 18px; font-weight: bold; display: flex; align-items: center; }
+        .mcq-item span.prefix { background: #2c3e50; padding: 4px 10px; border-radius: 4px; margin-right: 12px; color: #f1c40f; }
+        
+        .mcq-item.correct-ans { background-color: #27ae60 !important; border: 2px solid #fff; }
+        .mcq-item.fade-ans { opacity: 0.2; }
+
+        .player-grid-display { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; max-height: 70vh; overflow-y: auto; padding-right: 5px; }
+        .p-card { background: #34495e; padding: 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; border-left: 4px solid #7f8c8d; }
+        .p-card.has-ans { border-left-color: #f39c12; background: #2c3e50; }
+        .p-card.is-locked { border-left-color: #2ecc71; background: #1e272e; }
+        .p-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 110px; }
+        .p-ans-badge { font-size: 13px; padding: 4px 8px; border-radius: 4px; font-weight: bold; color: white; }
+
+        /* CSS PHẦN BẢNG TỔNG ĐIỂM TOÀN MÀN HÌNH CHÍNH */
+        .leaderboard-container { background: #34495e; padding: 20px; border-radius: 8px; width: 100%; }
+        .leaderboard-table { width: 100%; border-collapse: collapse; color: white; margin-top: 15px; }
+        .leaderboard-table th, .leaderboard-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #4f5d73; font-size: 18px; }
+        .leaderboard-table th { background-color: #1a252f; color: #f1c40f; font-weight: bold; }
+        .leaderboard-table tr:nth-child(even) { background-color: rgba(255,255,255,0.03); }
+        .rank-badge { display: inline-block; width: 30px; height: 30px; line-height: 30px; text-align: center; border-radius: 50%; font-weight: bold; background: #7f8c8d; color: white;}
+        .rank-1 { background: #f1c40f; color: #111; }
+        .rank-2 { background: #bdc3c7; color: #111; }
+        .rank-3 { background: #e67e22; color: #fff; }
     </style>
 </head>
 <body>
-    <h1 style="font-size: 32px; margin-bottom: 20px;">🏟️ RUNG CHUÔNG VÀNG - ACESTUDIO</h1>
+    <h1>MÀN HÌNH TRÌNH CHIẾU LỚN (PROJECTOR DISPLAY)</h1>
+    
     <div class="container">
         <div class="main-panel">
-            <div class="stats-grid">
-                <div class="stat-box total"><div>sỐ NGƯỜI CHƠI</div><div class="stat-num" id="view-total">0</div></div>
-                <div class="stat-box"><div>Trên sàn đấu</div><div class="stat-num" id="view-live" style="color: #2ecc71;">0</div></div>
-                <div class="stat-box elim"><div>Đã bị loại</div><div class="stat-num" id="view-dead" style="color: #e74c3c;">0</div></div>
+            
+            <div id="quiz-view-mode">
+                <div class="question-box" id="view-question">Đang chờ ban tổ chức thiết lập câu hỏi...</div>
+                <div class="mcq-grid" id="view-mcq-box">
+                    <div class="mcq-item" id="view-ans-A"><span class="prefix">A</span> <span id="vt-A">...</span></div>
+                    <div class="mcq-item" id="view-ans-B"><span class="prefix">B</span> <span id="vt-B">...</span></div>
+                    <div class="mcq-item" id="view-ans-C"><span class="prefix">C</span> <span id="vt-C">...</span></div>
+                    <div class="mcq-item" id="view-ans-D"><span class="prefix">D</span> <span id="vt-D">...</span></div>
+                </div>
+                <div id="view-short-msg" style="display:none; text-align:center; margin-top:30px; font-size:22px; color:#f1c40f; font-style:italic; font-weight:bold;">✍️ CHẾ ĐỘ TRẢ LỜI TỰ LUẬN TRÊN THIẾT BỊ</div>
             </div>
-            <div class="question-banner" id="view-question">Đang đợi phát câu hỏi...</div>
-            <h2 id="view-answer-banner" style="color: #f1c40f; background: #243342; padding: 15px; border-radius: 8px; display:none;"></h2>
+
+            <div id="leaderboard-panel" class="leaderboard-container" style="display: none;">
+                <h2>🏆 BẢNG THÀNH TÍCH THÍ SINH</h2>
+                <table class="leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 80px; text-align:center;">Hạng</th>
+                            <th>Tên Thí sinh</th>
+                            <th style="text-align: center;">Tổng Điểm</th>
+                            <th style="text-align: center;">Tổng Thời Gian</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-rows">
+                        </tbody>
+                </table>
+            </div>
+
         </div>
+
         <div class="side-panel">
-            <h2>SÀN ĐẤU</h2>
-            <div class="player-monitor-list" id="view-players-list"></div>
+            <div class="stats-grid">
+                <div class="stat-box"><div>Tổng số</div><div class="stat-num" id="view-total">0</div></div>
+                <div class="stat-box live"><div>Trên sàn</div><div class="stat-num" id="view-live">0</div></div>
+                <div class="stat-box dead"><div>Bị loại</div><div class="stat-num" id="view-dead">0</div></div>
+            </div>
+            <h2>SÀN THI ĐẤU TRỰC TUYẾN</h2>
+            <div class="player-grid-display" id="players-view-container"></div>
         </div>
     </div>
 
     <script>
         const channel = new BroadcastChannel('quiz_score_engine_channel');
-        let dPlayersMap = {};
-        let currentMode = 'MCQ';
-        let isRevealed = false; 
         let globalCorrectAns = '';
+        let currentMode = 'MCQ';
 
         channel.onmessage = (event) => {
             const data = event.data;
+
             if (data.type === 'START_QUIZ') {
-                currentMode = data.mode;
-                isRevealed = false; 
                 globalCorrectAns = '';
-                document.getElementById('view-question').innerText = `❓ ${data.question}`;
-                document.getElementById('view-answer-banner').style.display = 'none';
-                renderDisplayUI();
-            } 
-            else if (data.type === 'SYNC_DISPLAY_DATA') {
-                if (!isRevealed) {
-                    dPlayersMap = data.players;
-                    renderDisplayUI();
+                currentMode = data.mode;
+                
+                // Trở lại giao diện câu hỏi bình thường
+                document.getElementById('quiz-view-mode').style.display = 'block';
+                document.getElementById('leaderboard-panel').style.display = 'none';
+
+                document.getElementById('view-question').innerText = data.question;
+                
+                document.querySelectorAll('.mcq-item').forEach(el => el.className = 'mcq-item');
+
+                if (currentMode === 'MCQ') {
+                    document.getElementById('view-mcq-box').style.display = 'grid';
+                    document.getElementById('view-short-msg').style.display = 'none';
+                    document.getElementById('vt-A').innerText = data.answers.A;
+                    document.getElementById('vt-B').innerText = data.answers.B;
+                    document.getElementById('vt-C').innerText = data.answers.C;
+                    document.getElementById('vt-D').innerText = data.answers.D;
+                } else {
+                    document.getElementById('view-mcq-box').style.display = 'none';
+                    document.getElementById('view-short-msg').style.display = 'block';
                 }
-            }
+            } 
             else if (data.type === 'COMMAND_DISPLAY_REVEAL') {
-                isRevealed = true;
                 globalCorrectAns = data.correctAns;
                 
-                const banner = document.getElementById('view-answer-banner');
-                banner.innerText = `🎉 ĐÁP ÁN CHÍNH XÁC: ${globalCorrectAns.toUpperCase()}`;
-                banner.style.display = 'block';
-                
-                renderDisplayUI(); 
+                if (data.mode === 'MCQ') {
+                    document.querySelectorAll('.mcq-item').forEach(el => {
+                        const opt = el.id.replace('view-ans-', '');
+                        if (opt === globalCorrectAns) {
+                            el.classList.add('correct-ans');
+                        } else {
+                            el.classList.add('fade-ans');
+                        }
+                    });
+                } else {
+                    document.getElementById('view-question').innerHTML = `${document.getElementById('view-question').innerText}<br><span style="color:#2ecc71; font-size:26px; margin-top:10px; display:block;">🎯 ĐÁP ÁN ĐÚNG: ${globalCorrectAns}</span>`;
+                }
+            } 
+            else if (data.type === 'SYNC_DISPLAY_DATA') {
+                // Điều khiển chế độ hiển thị dựa trên tín hiệu từ Controller
+                if(data.showStatsMode) {
+                    document.getElementById('quiz-view-mode').style.display = 'none';
+                    document.getElementById('leaderboard-panel').style.display = 'block';
+                    renderLeaderboard(data.players);
+                } else {
+                    document.getElementById('quiz-view-mode').style.display = 'block';
+                    document.getElementById('leaderboard-panel').style.display = 'none';
+                }
+
+                renderFloorGrid(data.players);
             }
         };
 
-        function renderDisplayUI() {
-            const listContainer = document.getElementById('view-players-list');
-            listContainer.innerHTML = '';
-            let total = 0; let live = 0; let dead = 0;
+        // Render bảng thành tích Tổng điểm, sắp xếp ai cao điểm nhất lên đầu
+        function renderLeaderboard(players) {
+            const tbody = document.getElementById('leaderboard-rows');
+            tbody.innerHTML = '';
 
-            for(let name in dPlayersMap) {
-                total++;
-                const p = dPlayersMap[name];
-                if (p.isEliminated) { dead++; } else { live++; }
+            let sortedPlayers = [];
+            for (let name in players) {
+                sortedPlayers.push({ name: name, ...players[name] });
+            }
 
-                const row = document.createElement('div');
-                row.className = `p-row ${p.isEliminated ? 'state-eliminated' : ''}`;
+            // Sắp xếp: Điểm cao đứng trước, nếu bằng điểm thì thời gian ít hơn đứng trước
+            sortedPlayers.sort((a, b) => {
+                let scoreA = parseFloat(a.totalScore) || 0;
+                let scoreB = parseFloat(b.totalScore) || 0;
+                if(scoreB !== scoreA) return scoreB - scoreA;
                 
+                let timeA = parseFloat(a.totalTime) || 0;
+                let timeB = parseFloat(b.totalTime) || 0;
+                return timeA - timeB;
+            });
+
+            sortedPlayers.forEach((p, index) => {
+                const tr = document.createElement('tr');
+                if(p.isEliminated) tr.style.opacity = '0.5';
+
+                let rankClass = (index < 3) ? `rank-${index + 1}` : '';
+                
+                tr.innerHTML = `
+                    <td style="text-align:center;"><span class="rank-badge ${rankClass}">${index + 1}</span></td>
+                    <td><b>${p.name}</b></td>
+                    <td style="text-align: center; color:#2ecc71; font-weight:bold;">${p.totalScore ?? 0}đ</td>
+                    <td style="text-align: center; color:#3498db;">${p.totalTime ?? 0}s</td>
+                    <td>${p.isEliminated ? '❌ Đã bị Loại' : '🟢 Đang Thi Đấu'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Render các ô trạng thái nhanh của sàn thi đấu bên góc phải
+        function renderFloorGrid(players) {
+            const listContainer = document.getElementById('players-view-container');
+            listContainer.innerHTML = '';
+
+            let total = 0, live = 0, dead = 0;
+
+            for (let name in players) {
+                total++;
+                const p = players[name];
+                const row = document.createElement('div');
+
                 let ansBadge = '';
                 if (!p.isEliminated) {
-                    if (p.answer === 'Chưa trả lời') {
-                        ansBadge = `<span class="p-ans-badge not-yet">...</span>`;
-                    } else {
-                        if (!isRevealed) {
-                            ansBadge = `<span class="p-ans-badge locked">${p.isLocked ? "🔒 Đã Chốt" : "✍️ Đang nhập"}</span>`;
+                    live++;
+                    if (p.isLocked) {
+                        row.className = "p-card is-locked";
+                        if (!globalCorrectAns) {
+                            ansBadge = `<span class="p-ans-badge" style="background:#2ecc71">Đã chốt</span>`;
                         } else {
-                            // Khi lật mở đáp án
-                            ansBadge = `<span class="p-ans-badge" style="background:#2ecc71; color:#111">${p.answer}</span>`;
+                            ansBadge = `<span class="p-ans-badge" style="background:#fff; color:#111">${p.answer}</span>`;
                             
                             if (currentMode === 'MCQ') {
                                 if (p.answer === globalCorrectAns) {
-                                    row.style.backgroundColor = "#27ae60"; // Đúng màu xanh
+                                    row.style.backgroundColor = "#27ae60";
                                 } else {
-                                    row.style.backgroundColor = "#c0392b"; // Sai màu đỏ
+                                    row.style.backgroundColor = "#c0392b";
                                 }
                             } else {
-                                // Nếu là tự luận, so khớp chuỗi chữ viết thường
                                 if (p.answer.toLowerCase().trim() === globalCorrectAns.toLowerCase().trim()) {
                                     row.style.backgroundColor = "#27ae60";
                                 } else {
@@ -118,8 +227,18 @@
                                 }
                             }
                         }
+                    } else {
+                        if (p.answer !== 'Chưa trả lời') {
+                            row.className = "p-card has-ans";
+                            ansBadge = `<span class="p-ans-badge" style="background:#f39c12">Đang gõ</span>`;
+                        } else {
+                            row.className = "p-card";
+                            ansBadge = `<span class="p-ans-badge" style="background:#7f8c8d">...</span>`;
+                        }
                     }
                 } else {
+                    dead++;
+                    row.className = "p-card";
                     ansBadge = `<span class="p-ans-badge" style="background:#e74c3c">LOẠI</span>`;
                 }
 

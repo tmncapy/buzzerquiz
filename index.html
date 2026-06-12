@@ -34,6 +34,9 @@
         .text-input-mode { background: #fdfefe; padding: 20px; border: 2px dashed #34495e; border-radius: 8px; margin-top: 20px; }
         .text-input-mode input.locked { background-color: #e9ecef; color: #495057; border-color: #ced4da; cursor: pointer; font-weight: bold; }
         .submit-action-area { margin-top: 20px; padding: 10px; background: #fff3cd; border-radius: 8px; border: 1px solid #ffeeba; }
+        
+        /* Giao diện thanh hiển thị điểm tích lũy của Player */
+        .player-stats-bar { display: flex; justify-content: space-around; background: #eaedf1; padding: 8px; border-radius: 6px; margin-bottom: 15px; font-size: 14px; color: #2c3e50; border: 1px solid #dcdde1; }
     </style>
 </head>
 <body>
@@ -45,9 +48,14 @@
         </div>
 
         <div id="player-screen" class="screen">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                 <b id="player-title">Player</b>
                 <span id="player-timer" style="font-size: 20px; font-weight: bold; color: #e74c3c;">00s</span>
+            </div>
+
+            <div class="player-stats-bar">
+                <span>🏆 Tổng điểm: <b id="stat-total-score" style="color:#27ae60;">0</b></span>
+                <span>⏱️ Tổng thời gian: <b id="stat-total-time" style="color:#2980b9;">0s</b></span>
             </div>
             
             <div id="main-play-zone">
@@ -86,7 +94,7 @@
         let countdownInterval = null;
         let timeIsOverGlobal = false; 
         let currentMaxDuration = 15;
-        let iamEliminated = false; // Trạng thái sống/chết của bản thân
+        let iamEliminated = false; 
         
         let startThinkingTime = 0; 
         let totalTimeAccumulated = 0; 
@@ -131,21 +139,24 @@
                 return;
             }
 
-            // KIỂM TRA ĐỒNG BỘ TRẠNG THÁI BỊ LOẠI TỪ TECH GỬI VỀ
             if (data.type === 'SYNC_DISPLAY_DATA') {
                 if(data.players && data.players[myName]) {
-                    let remoteState = data.players[myName].isEliminated;
+                    let remoteData = data.players[myName];
+                    
+                    // ĐỒNG BỘ ĐIỂM VÀ TỔNG THỜI GIAN TỪ ADMIN VỀ MÀN HÌNH CON
+                    document.getElementById('stat-total-score').innerText = remoteData.totalScore !== undefined ? remoteData.totalScore : 0;
+                    document.getElementById('stat-total-time').innerText = remoteData.totalTime !== undefined ? remoteData.totalTime + "s" : "0s";
+
+                    let remoteState = remoteData.isEliminated;
                     if (remoteState !== iamEliminated) {
                         iamEliminated = remoteState;
                         if(iamEliminated) {
-                            // Ẩn bảng chơi, hiện màn hình thông báo bị loại chết chóc
                             document.getElementById('main-play-zone').style.display = 'none';
                             document.getElementById('elim-msg').style.display = 'block';
                             document.getElementById('elim-msg').style.backgroundColor = '#e74c3c';
                             clearInterval(countdownInterval);
                             document.getElementById('player-timer').innerText = "00s";
                         } else {
-                            // Hồi sinh trở lại sàn đấu
                             document.getElementById('main-play-zone').style.display = 'block';
                             document.getElementById('elim-msg').style.display = 'none';
                             document.getElementById('player-status').innerText = "❤️ Bạn đã được ban tổ chức cứu! Hãy sẵn sàng.";
@@ -155,7 +166,7 @@
                 return;
             }
 
-            if (iamEliminated) return; // Nếu đã chết thì bỏ qua mọi hiệu ứng lệnh câu hỏi tiếp theo
+            if (iamEliminated) return; 
 
             if (data.type === 'START_QUIZ') {
                 currentMode = data.mode;

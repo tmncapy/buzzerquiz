@@ -133,7 +133,6 @@
                         if(iamEliminated) {
                             document.getElementById('main-play-zone').style.display = 'none';
                             document.getElementById('elim-msg').style.display = 'block';
-                            document.getElementById('elim-msg').style.backgroundColor = '#e74c3c';
                             clearInterval(countdownInterval);
                             document.getElementById('player-timer').innerText = "00s";
                         } else {
@@ -148,6 +147,7 @@
 
             if (iamEliminated) return;
 
+            // Nhận lệnh khởi tạo và tính giờ từ Admin
             if (data.type === 'START_QUIZ') {
                 currentMode = data.mode;
                 currentMaxDuration = data.duration;
@@ -168,10 +168,6 @@
                 txtInput.readOnly = false;
 
                 resetMCQButtonStyles();
-                document.querySelectorAll('.btn-ans').forEach(btn => {
-                    btn.style.backgroundImage = 'none';
-                    btn.classList.remove('fade-out');
-                });
 
                 if (currentMode === 'MCQ') {
                     document.getElementById('player-mcq-box').style.display = 'grid';
@@ -185,16 +181,12 @@
                     txtInput.focus();
                     document.getElementById('player-status').innerText = "Gõ câu trả lời rồi nhấn Enter để Chốt.";
                 }
+                
+                // Khởi chạy đồng hồ tính giờ phía người chơi
                 startPlayerTimer(data.duration);
 
             } else if (data.type === 'TIME_UP') {
                 forceLockOnTimeUp(data.duration);
-            } 
-            else if (data.type === 'SHOW_RESULT') { // lệnh phản hồi màu sắc nếu cần
-                timeIsOverGlobal = true;
-                clearInterval(countdownInterval);
-                document.getElementById('player-action-area').style.display = 'none';
-                enableMCQButtons(false);
             }
         };
 

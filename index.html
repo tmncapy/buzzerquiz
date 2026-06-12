@@ -48,7 +48,7 @@
             
             <div id="main-play-zone">
                 <div class="question-box" id="display-question">Đang đợi câu hỏi từ Controller...</div>
-                <p id="player-status" style="font-size: 16px; font-weight: 500; color: #2c3e50; margin-bottom: 20px; background:#e8f4f8; padding:10px; border-radius:6px;">Hệ thống đang đóng. Vui lòng chờ lệnh...</p>
+                <div id="player-status" style="font-size: 16px; font-weight: 500; color: #2c3e50; margin-bottom: 20px; background:#e8f4f8; padding:10px; border-radius:6px;">Hệ thống đang đóng. Vui lòng chờ lệnh...</div>
                 
                 <div id="player-mcq-box" class="btn-group">
                     <button id="btn-ans-A" class="btn-ans btn-a" onclick="selectMCQAnswer('A')">A</button>
@@ -129,6 +129,8 @@
             if (data.type === 'SYNC_DISPLAY_DATA') {
                 if(data.players && data.players[myName]) {
                     let remoteState = data.players[myName].isEliminated;
+                    let pData = data.players[myName];
+                    
                     if (remoteState !== iamEliminated) {
                         iamEliminated = remoteState;
                         if(iamEliminated) {
@@ -136,10 +138,25 @@
                             document.getElementById('elim-msg').style.display = 'block';
                             clearInterval(countdownInterval);
                             document.getElementById('player-timer').innerText = "00s";
+                            return;
                         } else {
                             document.getElementById('main-play-zone').style.display = 'block';
                             document.getElementById('elim-msg').style.display = 'none';
-                            document.getElementById('player-status').innerText = "❤️ Bạn đã được cứu! Hãy sẵn sàng.";
+                        }
+                    }
+
+                    // Đồng bộ hiển thị Tổng điểm & Thời gian thực tế từ Admin sang cho riêng thiết bị Player nhìn thấy
+                    if (timeIsOverGlobal && !iamEliminated) {
+                        let statusElement = document.getElementById('player-status');
+                        if(statusElement.innerHTML.includes('🏆 Hồ sơ của bạn:')) {
+                            document.getElementById('player-status').innerHTML = `
+                                <div style="font-weight:bold; font-size:16px; margin-bottom:5px;">🏁 ĐÃ CẬP NHẬT KẾT QUẢ PHIÊN CHƠI!</div>
+                                <div style="color: #2c3e50; font-size: 14px; margin-top:5px; border-top: 1px dashed #b2bec3; padding-top:5px; text-align:left;">
+                                    <b>📊 THÔNG TIN TÍCH LŨY CỦA BẠN:</b><br>
+                                    🏅 Tổng điểm hiện tại: <span style="color:#27ae60; font-weight:bold; font-size:16px;">${pData.totalScore || 0}đ</span><br>
+                                    ⏱️ Tổng thời gian phản hồi: <span style="color:#d35400; font-weight:bold;">${pData.totalTime || 0}s</span>
+                                </div>
+                            `;
                         }
                     }
                 }
@@ -163,12 +180,10 @@
                 document.getElementById('btn-lock-answer').style.display = 'inline-block';
                 document.getElementById('btn-unlock-answer').style.display = 'none';
                 
-                // Hiển thị nội dung text câu hỏi nếu controller truyền qua
                 if(data.question) {
                     document.getElementById('display-question').innerText = data.question;
                 }
 
-                // Cập nhật text nhãn của các nút đáp án trắc nghiệm nếu có dữ liệu truyền qua
                 if(currentMode === 'MCQ' && data.answers) {
                     document.getElementById('btn-ans-A').innerText = `A: ${data.answers.A || ''}`;
                     document.getElementById('btn-ans-B').innerText = `B: ${data.answers.B || ''}`;
@@ -209,31 +224,31 @@
 
                 const correct = data.correctAns;
                 const chosen = playerTempAnswer;
+                let resultText = '';
 
                 if (currentMode === 'MCQ') {
+                    let isRight = (chosen === correct);
                     document.querySelectorAll('.btn-ans').forEach(btn => {
                         const option = btn.id.replace('btn-ans-', '').substring(0, 1);
                         if (option === chosen) {
-                            if (chosen === correct) {
-                                document.getElementById('player-status').innerText = `🎉 CHÍNH XÁC! Bạn trả lời đúng trong ${savedTimeTaken}s.`;
-                                btn.style.backgroundColor = "#27ae60"; 
-                            } else {
-                                document.getElementById('player-status').innerText = `❌ SAI RỒI! Bạn chọn ${chosen} | Đáp án: ${correct}.`;
-                                btn.style.backgroundColor = "#c0392b"; 
-                            }
+                            btn.style.backgroundColor = isRight ? "#27ae60" : "#c0392b"; 
                         }
                         if (option !== correct && option !== chosen) {
                             btn.classList.add('fade-out');
                         }
                     });
+                    resultText = isRight ? `🎉 CHÍNH XÁC (Đáp án: ${correct})` : `❌ SAI RỒI (Bạn chọn: ${chosen} | Đáp án: ${correct})`;
                 } else {
                     let isRight = (chosen.toLowerCase().trim() === correct.toLowerCase().trim());
-                    if(isRight) {
-                        document.getElementById('player-status').innerText = `🎉 CHÍNH XÁC! Cụm từ đúng: ${correct}`;
-                    } else {
-                        document.getElementById('player-status').innerText = `❌ CHƯA ĐÚNG! Bạn chốt: "${chosen}" | Đáp án: "${correct}"`;
-                    }
+                    resultText = isRight ? `🎉 CHÍNH XÁC (Từ khóa: ${correct})` : `❌ CHƯA ĐÚNG (Bạn chốt: "${chosen}" | Đáp án: "${correct}")`;
                 }
+
+                document.getElementById('player-status').innerHTML = `
+                    <div style="font-weight:bold; font-size:16px; margin-bottom:5px;">${resultText}</div>
+                    <div style="color: #2980b9; font-size: 14px; margin-top:5px; border-top: 1px dashed #ccc; padding-top:5px;">
+                        🏆 Hồ sơ của bạn: <span style="background:#27ae60; color:#fff; padding:2px 6px; border-radius:4px; font-weight:bold;">Đang kết nối nhận dữ liệu...</span>
+                    </div>
+                `;
             }
         };
 

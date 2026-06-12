@@ -7,7 +7,7 @@
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 800px; text-align: center; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 850px; text-align: center; }
         h2 { color: #333; margin-bottom: 20px; }
         button { background: #27ae60; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 8px; cursor: pointer; transition: 0.3s; width: 100%; font-weight: bold; }
         button:hover { background: #219653; }
@@ -26,18 +26,24 @@
         .btn-show-display { background: #9b59b6; font-size: 18px; font-weight: bold; padding: 16px; border-radius: 8px; margin-top: 10px; border: none; color: white; width: 100%; cursor: pointer; display: block; }
         .btn-show-display:hover { background: #8e44ad; }
 
-        .player-list { text-align: left; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px; max-height: 350px; overflow-y: auto; }
-        .player-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #ddd; }
+        .player-list { text-align: left; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px; max-height: 450px; overflow-y: auto; }
+        .player-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #ddd; gap: 10px; }
         .player-item.eliminated-row { background: #fce4e4; opacity: 0.7; }
-        .player-info { display: flex; flex-direction: column; }
+        .player-info { display: flex; flex-direction: column; flex: 1; }
         .player-name-text { font-weight: bold; font-size: 16px; }
         .time-elapsed { font-size: 12px; color: #2980b9; font-weight: bold; margin-top: 2px; }
         
+        /* CSS cho các ô chỉnh sửa điểm và thời gian */
+        .player-edit-inputs { display: flex; gap: 5px; align-items: center; }
+        .player-edit-inputs div { display: flex; flex-direction: column; align-items: flex-start; }
+        .player-edit-inputs label { font-size: 10px; color: #7f8c8d; font-weight: bold; margin-bottom: 2px; }
+        .input-stat-edit { width: 75px !important; padding: 6px !important; font-size: 13px !important; margin-bottom: 0 !important; text-align: center; font-weight: bold; }
+
         .action-btns { display: flex; gap: 5px; align-items: center; }
         .btn-kick { background: #e74c3c; padding: 6px 12px; font-size: 13px; border-radius: 4px; border: none; color: white; cursor: pointer; width: auto; font-weight: bold; }
         .btn-revive { background: #2ecc71; padding: 6px 12px; font-size: 13px; border-radius: 4px; border: none; color: white; cursor: pointer; width: auto; font-weight: bold; }
 
-        .badge { background: #7f8c8d; color: white; padding: 5px 12px; border-radius: 4px; font-size: 14px; font-weight: bold; max-width: 180px; word-break: break-all; }
+        .badge { background: #7f8c8d; color: white; padding: 5px 12px; border-radius: 4px; font-size: 14px; font-weight: bold; max-width: 120px; word-break: break-all; text-align: center; }
         .status-badge { font-size: 12px; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px;}
         .status-lock { background: #e74c3c; color: white; }
         .status-typing { background: #f39c12; color: white; }
@@ -113,6 +119,7 @@
         let currentMaxScore = 100;
         let finalCorrectAnswer = '';
 
+        // Tần suất ping đồng bộ trạng thái (Bao gồm điểm tổng và thời gian tổng)
         setInterval(() => { 
             channel.postMessage({ type: 'CONTROLLER_PING' }); 
             channel.postMessage({ type: 'SYNC_DISPLAY_DATA', players: playersMap });
@@ -195,11 +202,27 @@
             if(playersMap[name]) { playersMap[name].isEliminated = false; playersMap[name].answer = 'Chưa trả lời'; updateControllerUI(); }
         }
 
+        // Cập nhật giá trị trực tiếp khi Admin thay đổi textbox trên giao diện
+        function updatePlayerStats(name, field, value) {
+            if (playersMap[name]) {
+                playersMap[name][field] = parseFloat(value) || 0;
+            }
+        }
+
         channel.onmessage = (event) => {
             const data = event.data;
             if (data.type === 'PLAYER_JOIN') {
                 if (!playersMap[data.name]) {
-                    playersMap[data.name] = { answer: 'Chưa trả lời', isLocked: false, timeTaken: null, calculatedScore: 0, isEliminated: false };
+                    // Khởi tạo thêm totalScore và totalTime
+                    playersMap[data.name] = { 
+                        answer: 'Chưa trả lời', 
+                        isLocked: false, 
+                        timeTaken: null, 
+                        calculatedScore: 0, 
+                        isEliminated: false,
+                        totalScore: 0,
+                        totalTime: 0
+                    };
                 }
                 updateControllerUI();
             } else if (data.type === 'PLAYER_SUBMIT') {
@@ -207,7 +230,6 @@
                     playersMap[data.name].answer = data.answer; 
                     playersMap[data.name].isLocked = data.isLocked;
                     
-                    // SỬA LỖI ĐỒNG BỘ THỜI GIAN: Nhận trực tiếp thời gian thực nhận từ máy con gửi lên
                     playersMap[data.name].timeTaken = parseFloat(data.timeTaken || 0).toFixed(2); 
                     
                     if(data.isLocked) {
@@ -246,6 +268,18 @@
                         <span class="player-name-text">👤 ${name} ${p.isEliminated ? '<b>(LOẠI)</b>' : statusIcon}</span>
                         ${!p.isEliminated && p.answer !== 'Chưa trả lời' ? `<span class="time-elapsed">⏱️ Trả lời lúc: ${p.timeTaken}s | 🎯 Tạm tính: ${p.calculatedScore}đ</span>` : ''}
                     </div>
+                    
+                    <div class="player-edit-inputs">
+                        <div>
+                            <label>Tổng Điểm</label>
+                            <input type="number" class="input-stat-edit" value="${p.totalScore || 0}" oninput="updatePlayerStats('${name}', 'totalScore', this.value)">
+                        </div>
+                        <div>
+                            <label>Tổng Thời Gian (s)</label>
+                            <input type="number" step="0.01" class="input-stat-edit" value="${p.totalTime || 0}" oninput="updatePlayerStats('${name}', 'totalTime', this.value)">
+                        </div>
+                    </div>
+
                     <div class="action-btns"><span class="badge" style="${badgeStyle}">${p.answer}</span>${actionArea}</div>
                 `;
                 listContainer.appendChild(item);

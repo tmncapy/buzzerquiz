@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Màn hình Trình Chiếu lớn</title>
+    <title>Màn hình Trình Chiếu</title>
+    <script src="/socket.io/socket.io.js"></script>
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #1a252f; color: white; margin: 0; padding: 20px; min-height: 100vh; }
-        .container { max-width: 1300px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
         .main-panel, .side-panel { background: #2c3e50; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
         h1, h2 { margin-top: 0; text-align: center; color: #ecf0f1; }
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 25px; }
@@ -15,103 +16,79 @@
         .stat-box.live { border-bottom-color: #27ae60; }
         .stat-box.dead { border-bottom-color: #e74c3c; }
         .stat-num { font-size: 32px; font-weight: bold; display: block; margin-top: 5px; }
-        
-        .question-display-area { background: #34495e; border-left: 8px solid #9b59b6; padding: 20px; border-radius: 8px; margin-bottom: 20px; font-size: 24px; font-weight: bold; min-height: 100px; }
-        .answer-reveal-banner { display: none; background: #27ae60; color: white; font-size: 26px; font-weight: bold; text-align: center; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 3px solid #fff; animation: blink 1s infinite alternate; }
-        
-        .players-list { display: flex; flex-direction: column; gap: 10px; max-height: 60vh; overflow-y: auto; padding-right: 5px; }
-        .p-row { display: flex; justify-content: space-between; align-items: center; background: #34495e; padding: 15px 20px; border-radius: 8px; font-size: 18px; font-weight: 500; border-left: 5px solid #7f8c8d; transition: 0.3s; }
-        .p-name { display: flex; align-items: center; gap: 10px; }
-        .p-ans-badge { font-weight: bold; padding: 6px 12px; border-radius: 6px; color: white; min-width: 80px; text-align: center; }
-        .p-ans-badge.not-yet { background: #7f8c8d; font-style: italic; }
-        .p-ans-badge.typing { background: #f39c12; }
-        .p-ans-badge.locked { background: #2ecc71; border: 1px solid #fff; }
-
+        .question-area { background: #34495e; padding: 20px; border-radius: 8px; margin-bottom: 20px; font-size: 24px; font-weight: bold; min-height: 80px; }
+        .reveal-banner { display: none; background: #27ae60; font-size: 26px; font-weight: bold; text-align: center; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 2px solid #fff; }
+        .players-list { display: flex; flex-direction: column; gap: 10px; }
+        .p-row { display: flex; justify-content: space-between; align-items: center; background: #34495e; padding: 12px 20px; border-radius: 6px; font-size: 18px; font-weight: 500; border-left: 5px solid #7f8c8d; transition: 0.2s; }
+        .p-ans-badge { font-weight: bold; padding: 5px 12px; border-radius: 4px; color: white; min-width: 70px; text-align: center; }
         .state-eliminated { opacity: 0.4; background: #23313f !important; border-left-color: #c0392b !important; }
-        
-        .leaderboard-container { background: #111a24; padding: 15px; border-radius: 8px; margin-top: 15px; display: none; }
-        .rank-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #2c3e50; font-size: 16px; }
-        .rank-item:nth-child(2) { color: #f1c40f; font-weight: bold; font-size: 18px; }
-        
-        @keyframes blink { from { box-shadow: 0 0 10px #27ae60; } to { box-shadow: 0 0 25px #2ecc71; } }
+        .rank-item { display: flex; justify-content: space-between; padding: 8px 5px; border-bottom: 1px solid #34495e; }
     </style>
 </head>
 <body>
-    <div style="text-align: center; margin-bottom: 15px;">
-        <h1 style="font-size: 36px; color:#2ecc71; text-transform: uppercase; margin-bottom: 5px;">MÀN HÌNH TRÌNH CHIẾU CHÍNH</h1>
-    </div>
-
+    <h1 style="font-size: 32px; color:#2ecc71;">MÀN HÌNH TỔNG QUAN GAME TRÌNH CHIẾU</h1>
     <div class="container">
-        <!-- KHU VỰC TRÁI: THEO DÕI CÂU HỎI & TRẠNG THÁI TRẢ LỜI -->
         <div class="main-panel">
-            <div class="question-display-area" id="view-question">🎯 Đang đợi Admin ra đề bài...</div>
-            <div class="answer-reveal-banner" id="view-answer-banner">🎉 ĐÁP ÁN ĐÚNG LÀ: --</div>
+            <div class="question-area" id="view-question">🎯 Đang đợi Admin phát đề bài câu hỏi mới...</div>
+            <div class="reveal-banner" id="view-answer-banner">🎉 ĐÁP ÁN ĐÚNG LÀ: </div>
             
             <h2>DANH SÁCH THÍ SINH TRANH TÀI</h2>
             <div class="players-list" id="view-players-list"></div>
         </div>
 
-        <!-- KHU VỰC PHẢI: THỐNG KÊ SỐ LIỆU VÀ BẢNG XẾP HẠNG -->
         <div class="side-panel">
             <h2>THỐNG KÊ SÀN ĐẤU</h2>
             <div class="stats-grid">
-                <div class="stat-box">Tổng Số<span class="stat-num" id="view-total">0</span></div>
-                <div class="stat-box live" style="background:#1e3d2f">Còn Lại<span class="stat-num" id="view-live" style="color:#2ecc71">0</span></div>
-                <div class="stat-box dead" style="background:#3d1e1e">Bị Loại<span class="stat-num" id="view-dead" style="color:#e74c3c">0</span></div>
+                <div class="stat-box">Tổng số<span class="stat-num" id="view-total">0</span></div>
+                <div class="stat-box live">Còn lại<span class="stat-num" id="view-live" style="color:#2ecc71">0</span></div>
+                <div class="stat-box dead">Bị loại<span class="stat-num" id="view-dead" style="color:#e74c3c">0</span></div>
             </div>
 
-            <!-- BẢNG XẾP HẠNG TỔNG ĐIỂM CỘNG DỒN MÀN HÌNH LỚN -->
-            <div id="leaderboard-zone" class="leaderboard-container">
-                <h3 style="text-align: center; color: #f1c40f; margin-top: 0; border-bottom: 2px dashed #f1c40f; padding-bottom: 5px;">🏆 BẢNG XẾP HẠNG ĐIỂM SỐ</h3>
-                <div id="leaderboard-list"></div>
-            </div>
+            <h3 style="color:#f1c40f; border-bottom:1px solid #fff; padding-bottom:5px;">🏆 BẢNG XẾP HẠNG ĐIỂM SỐ</h3>
+            <div id="leaderboard-list"></div>
         </div>
     </div>
 
     <script>
-        const channel = new BroadcastChannel('quiz_score_engine_channel');
+        const socket = io();
         let dPlayersMap = {};
         let currentMode = 'MCQ';
         let isRevealed = false;
         let globalCorrectAns = '';
-        let isDisplayShowingStatsGlobal = false; // Nhận biến đồng bộ trạng thái nút Cam từ Admin
 
-        channel.onmessage = (event) => {
-            const data = event.data;
-            if (data.type === 'START_QUIZ') {
-                currentMode = data.mode;
-                isRevealed = false; 
-                globalCorrectAns = '';
-                isDisplayShowingStatsGlobal = false; 
-                document.getElementById('view-question').innerText = `❓ CÂU HỎI: ${data.question}`;
-                document.getElementById('view-answer-banner').style.display = 'none';
-                document.getElementById('leaderboard-zone').style.display = 'none'; 
-                renderDisplayUI();
-            } 
-            else if (data.type === 'SYNC_DISPLAY_DATA') {
-                dPlayersMap = data.players;
-                isDisplayShowingStatsGlobal = data.showStatsMode; 
-                
-                // Đồng bộ ẩn hiện bảng xếp hạng cùng lúc khi bấm nút Show bảng tổng điểm
-                document.getElementById('leaderboard-zone').style.display = data.showStatsMode ? 'block' : 'none';
-                if (data.showStatsMode) { renderLeaderboard(); }
-                renderDisplayUI();
+        socket.on('START_QUIZ', (data) => {
+            currentMode = data.mode;
+            isRevealed = false; 
+            globalCorrectAns = '';
+            document.getElementById('view-question').innerText = `❓ CÂU HỎI: ${data.question}`;
+            document.getElementById('view-answer-banner').style.display = 'none';
+            renderDisplayUI();
+        });
+
+        socket.on('SYNC_DATA_FROM_SERVER', (data) => {
+            dPlayersMap = data.players;
+            isRevealed = data.isRevealed;
+            globalCorrectAns = data.correctAns;
+            if (isRevealed) {
+                document.getElementById('view-answer-banner').innerText = `🎉 ĐÁP ÁN ĐÚNG LÀ: ${globalCorrectAns}`;
+                document.getElementById('view-answer-banner').style.display = 'block';
             }
-            else if (data.type === 'COMMAND_DISPLAY_REVEAL') {
-                isRevealed = true;
-                globalCorrectAns = data.correctAns;
-                dPlayersMap = data.players; 
-                
-                const banner = document.getElementById('view-answer-banner');
-                banner.innerText = `🎉 ĐÁP ÁN CHÍNH XÁC: ${globalCorrectAns.toUpperCase()}`;
-                banner.style.display = 'block';
-                
-                // Khi vừa bấm Show đáp án (Màu tím), bảng xếp hạng vẫn giữ ẩn/hiện dựa theo nút Cam điều khiển
-                document.getElementById('leaderboard-zone').style.display = isDisplayShowingStatsGlobal ? 'block' : 'none';
-                if (isDisplayShowingStatsGlobal) { renderLeaderboard(); }
-                renderDisplayUI(); 
-            }
-        };
+            renderDisplayUI();
+            renderLeaderboard();
+        });
+
+        socket.on('COMMAND_DISPLAY_REVEAL', (data) => {
+            isRevealed = true;
+            globalCorrectAns = data.correctAns;
+            dPlayersMap = data.players; 
+            
+            const banner = document.getElementById('view-answer-banner');
+            banner.innerText = `🎉 ĐÁP ÁN CHÍNH XÁC LÀ: ${globalCorrectAns.toUpperCase()}`;
+            banner.style.display = 'block';
+            
+            renderDisplayUI(); 
+            renderLeaderboard();
+        });
 
         function renderDisplayUI() {
             const listContainer = document.getElementById('view-players-list');
@@ -129,40 +106,28 @@
                 let ansBadge = '';
                 if (!p.isEliminated) {
                     if (p.answer === 'Chưa trả lời') {
-                        ansBadge = `<span class="p-ans-badge not-yet">...</span>`;
+                        ansBadge = `<span class="p-ans-badge" style="background:#7f8c8d">...</span>`;
                     } else {
                         if (!isRevealed) {
-                            ansBadge = `<span class="p-ans-badge ${p.isLocked ? 'locked' : 'typing'}">
-                                ${p.isLocked ? "🔒 Đã Chốt" : "✍️ Đang nhập"}
+                            ansBadge = `<span class="p-ans-badge" style="background:${p.isLocked ? '#2ecc71':'#f39c12'}">
+                                ${p.isLocked ? "🔒 Chốt" : "✍️ Sửa"}
                             </span>`;
                         } else {
-                            // XỬ LÝ KHI ĐÃ CÓ ĐÁP ÁN
                             let isCorrect = false;
                             if (currentMode === 'MCQ') {
                                 isCorrect = (p.answer === globalCorrectAns);
                             } else {
                                 isCorrect = (p.answer.toLowerCase().trim() === globalCorrectAns.toLowerCase().trim());
                             }
-
-                            // Chuyển đổi màu dòng thông báo Đúng/Sai (Chỉ thay đổi màu nền)
                             row.style.backgroundColor = isCorrect ? "#27ae60" : "#c0392b";
-                            row.style.borderLeftColor = isCorrect ? "#2ecc71" : "#e74c3c";
-
-                            // KIỂM TRA ĐIỀU KIỆN: Chỉ khi nào bấm SHOW bảng tổng điểm (Nút cam) mới hiện nhãn trắng thông tin
-                            if (isDisplayShowingStatsGlobal) {
-                                let showTxt = `Chốt: ${p.answer} | 🏆 ${p.totalScore || 0}đ - ⏱️ ${p.totalTime || 0}s`;
-                                ansBadge = `<span class="p-ans-badge" style="background:#fff; color:#111; max-width:400px; font-size:14px; padding: 6px 10px;">${showTxt}</span>`;
-                            } else {
-                                // Bình thường khi mới khui đáp án: Giấu kín, chỉ hiện text Đúng/Sai chung chung
-                                ansBadge = `<span class="p-ans-badge" style="background: rgba(0,0,0,0.2); font-size:14px;">${isCorrect ? "✓ ĐÚNG" : "✕ SAI"}</span>`;
-                            }
+                            ansBadge = `<span class="p-ans-badge" style="background:rgba(255,255,255,0.2)">${p.answer}</span>`;
                         }
                     }
                 } else {
-                    ansBadge = `<span class="p-ans-badge" style="background:#e74c3c">LOẠI ☠️</span>`;
+                    ansBadge = `<span class="p-ans-badge" style="background:#e74c3c">LOẠI</span>`;
                 }
 
-                row.innerHTML = `<div class="p-name">👤 ${name}</div>${ansBadge}`;
+                row.innerHTML = `<div>👤 ${name}</div>${ansBadge}`;
                 listContainer.appendChild(row);
             }
             document.getElementById('view-total').innerText = total;
@@ -173,27 +138,17 @@
         function renderLeaderboard() {
             const lbContainer = document.getElementById('leaderboard-list');
             lbContainer.innerHTML = '';
-            
             let list = [];
-            for (let name in dPlayersMap) {
-                list.push({ name: name, ...dPlayersMap[name] });
-            }
+            for (let name in dPlayersMap) { list.push({ name: name, ...dPlayersMap[name] }); }
+            
+            // Sắp xếp theo tổng điểm cao nhất, điểm bằng nhau xếp theo thời gian phản hồi thấp nhất
+            list.sort((a, b) => parseFloat(b.totalScore || 0) - parseFloat(a.totalScore || 0));
 
-            list.sort((a, b) => {
-                let scoreA = parseFloat(a.totalScore || 0);
-                let scoreB = parseFloat(b.totalScore || 0);
-                if (scoreB !== scoreA) return scoreB - scoreA;
-                return parseFloat(a.totalTime || 0) - parseFloat(b.totalTime || 0);
-            });
-
-            list.forEach((p, idx) => {
+            list.forEach((p, index) => {
                 const item = document.createElement('div');
                 item.className = 'rank-item';
-                if(p.isEliminated) item.style.opacity = '0.5';
-                item.innerHTML = `
-                    <span><b>#${idx + 1}</b> ${p.name} ${p.isEliminated ? '(Loại)' : ''}</span>
-                    <span><b>${p.totalScore || 0}đ</b> (${p.totalTime || 0}s)</span>
-                `;
+                if(p.isEliminated) item.style.opacity = '0.4';
+                item.innerHTML = `<span><b>#${index+1}</b> ${p.name}</span> <span><b>${p.totalScore || 0}đ</b></span>`;
                 lbContainer.appendChild(item);
             });
         }

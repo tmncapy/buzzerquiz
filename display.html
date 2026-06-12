@@ -3,74 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Màn hình Trình Chiếu Phụ trợ</title>
+    <title>Màn hình Trình Chiếu lớn</title>
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #1a252f; color: white; margin: 0; padding: 20px; min-height: 100vh; }
-        .container { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        .container { max-width: 1300px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
         .main-panel, .side-panel { background: #2c3e50; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
         h1, h2 { margin-top: 0; text-align: center; color: #ecf0f1; }
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 25px; }
         .stat-box { background: #34495e; padding: 15px; border-radius: 8px; text-align: center; border-bottom: 4px solid #2ecc71; }
-        .stat-box.elim { border-color: #e74c3c; }
-        .stat-box.total { border-color: #3498db; }
-        .stat-num { font-size: 36px; font-weight: bold; margin-top: 5px; }
+        .stat-box.live { border-bottom-color: #27ae60; }
+        .stat-box.dead { border-bottom-color: #e74c3c; }
+        .stat-num { font-size: 32px; font-weight: bold; display: block; margin-top: 5px; }
         
-        .player-monitor-list { display: flex; flex-direction: column; gap: 10px; max-height: 650px; overflow-y: auto; }
-        .p-row { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 6px; background: #34495e; border-left: 5px solid #7f8c8d; }
-        .p-row.state-eliminated { border-left-color: #e74c3c; opacity: 0.3; background: #243342 !important; }
-        .p-name { font-weight: bold; font-size: 18px; }
-        .p-ans-badge { font-weight: bold; font-size: 16px; background: #3498db; padding: 6px 14px; border-radius: 20px; max-width: 220px; text-align: center; color: white; word-break: break-all; }
-        .p-ans-badge.locked { background: #e67e22; }
-        .p-ans-badge.not-yet { background: #7f8c8d; }
+        .question-display-area { background: #34495e; border-left: 8px solid #9b59b6; padding: 20px; border-radius: 8px; margin-bottom: 20px; font-size: 24px; font-weight: bold; min-height: 100px; }
+        .answer-reveal-banner { display: none; background: #27ae60; color: white; font-size: 26px; font-weight: bold; text-align: center; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 3px solid #fff; animation: blink 1s infinite alternate; }
+        
+        .players-list { display: flex; flex-direction: column; gap: 10px; max-height: 60vh; overflow-y: auto; padding-right: 5px; }
+        .p-row { display: flex; justify-content: space-between; align-items: center; background: #34495e; padding: 15px 20px; border-radius: 8px; font-size: 18px; font-weight: 500; border-left: 5px solid #7f8c8d; transition: 0.3s; }
+        .p-name { display: flex; align-items: center; gap: 10px; }
+        .p-ans-badge { font-weight: bold; padding: 6px 12px; border-radius: 6px; color: white; min-width: 80px; text-align: center; }
+        .p-ans-badge.not-yet { background: #7f8c8d; font-style: italic; }
+        .p-ans-badge.typing { background: #f39c12; }
+        .p-ans-badge.locked { background: #2ecc71; border: 1px solid #fff; }
 
-        .leaderboard-container { background: #34495e; padding: 20px; border-radius: 8px; width: 100%; }
-        .leaderboard-table { width: 100%; border-collapse: collapse; color: white; margin-top: 15px; }
-        .leaderboard-table th, .leaderboard-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #4f5d73; font-size: 18px; }
-        .leaderboard-table th { background-color: #1a252f; color: #f1c40f; font-weight: bold; }
-        .leaderboard-table tr:nth-child(even) { background-color: rgba(255,255,255,0.03); }
-        .rank-badge { display: inline-block; width: 30px; height: 30px; line-height: 30px; text-align: center; border-radius: 50%; font-weight: bold; background: #7f8c8d; color: white;}
-        .rank-1 { background: #f1c40f; color: #111; }
-        .rank-2 { background: #bdc3c7; color: #111; }
-        .rank-3 { background: #e67e22; color: #fff; }
+        .state-eliminated { opacity: 0.4; background: #23313f !important; border-left-color: #c0392b !important; }
+        
+        .leaderboard-container { background: #111a24; padding: 15px; border-radius: 8px; margin-top: 15px; display: none; }
+        .rank-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #2c3e50; font-size: 16px; }
+        .rank-item:nth-child(2) { color: #f1c40f; font-weight: bold; font-size: 18px; } /* Top 1 */
+        
+        @keyframes blink { from { box-shadow: 0 0 10px #27ae60; } to { box-shadow: 0 0 25px #2ecc71; } }
     </style>
 </head>
 <body>
-    <h1 style="font-size: 32px; margin-bottom: 20px;">THẬP TÚ BÁT TRANH</h1>
+    <div style="text-align: center; margin-bottom: 15px;">
+        <h1 style="font-size: 36px; color:#2ecc71; text-transform: uppercase; margin-bottom: 5px;">MÀN HÌNH TRÌNH CHIẾU CHÍNH</h1>
+    </div>
+
     <div class="container">
-        
         <div class="main-panel">
-            <div class="stats-grid">
-                <div class="stat-box total"><div>SỐ NGƯỜI CHƠI</div><div class="stat-num" id="view-total">0</div></div>
-                <div class="stat-box"><div>Trên sàn đấu</div><div class="stat-num" id="view-live" style="color: #2ecc71;">0</div></div>
-                <div class="stat-box elim"><div>Đã bị loại</div><div class="stat-num" id="view-dead" style="color: #e74c3c;">0</div></div>
-            </div>
-
-            <div id="quiz-view-box" style="padding: 20px; background: #34495e; border-radius: 8px;">
-                <h2 style="color: #bdc3c7; margin: 10px 0;">HỆ THỐNG ĐANG CHẠY CÂU HỎI...</h2>
-                <h2 id="view-answer-banner" style="color: #f1c40f; background: #243342; padding: 20px; border-radius: 8px; display:none; font-size: 26px;"></h2>
-            </div>
-
-            <div id="leaderboard-view-box" class="leaderboard-container" style="display: none;">
-                <h2>🏆 BẢNG TỔNG ĐIỂM THÍ SINH</h2>
-                <table class="leaderboard-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 80px; text-align:center;">Hạng</th>
-                            <th>Tên Thí sinh</th>
-                            <th style="text-align: center;">Tổng Điểm</th>
-                            <th style="text-align: center;">Tổng Thời Gian</th>
-                            <th>Trạng thái</th>
-                        </tr>
-                    </thead>
-                    <tbody id="leaderboard-rows"></tbody>
-                </table>
-            </div>
+            <div class="question-display-area" id="view-question">🎯 Đang đợi Admin ra đề bài...</div>
+            <div class="answer-reveal-banner" id="view-answer-banner">🎉 ĐÁP ÁN ĐÚNG LÀ: --</div>
+            
+            <h2>DANH SÁCH THÍ SINH TRANH TÀI</h2>
+            <div class="players-list" id="view-players-list"></div>
         </div>
 
         <div class="side-panel">
-            <h2>SÀN ĐẤU LIVE</h2>
-            <div class="player-monitor-list" id="view-players-list"></div>
+            <h2>THỐNG KÊ SÀN ĐẤU</h2>
+            <div class="stats-grid">
+                <div class="stat-box">Tổng Số<span class="stat-num" id="view-total">0</span></div>
+                <div class="stat-box live" style="background:#1e3d2f">Còn Lại<span class="stat-num" id="view-live" style="color:#2ecc71">0</span></div>
+                <div class="stat-box dead" style="background:#3d1e1e">Bị Loại<span class="stat-num" id="view-dead" style="color:#e74c3c">0</span></div>
+            </div>
+
+            <div id="leaderboard-zone" class="leaderboard-container">
+                <h3 style="text-align: center; color: #f1c40f; margin-top: 0; border-bottom: 2px dashed #f1c40f; padding-bottom: 5px;">🏆 BẢNG XẾP HẠNG ĐIỂM SỐ</h3>
+                <div id="leaderboard-list"></div>
+            </div>
         </div>
     </div>
 
@@ -78,7 +69,7 @@
         const channel = new BroadcastChannel('quiz_score_engine_channel');
         let dPlayersMap = {};
         let currentMode = 'MCQ';
-        let isRevealed = false; 
+        let isRevealed = false;
         let globalCorrectAns = '';
 
         channel.onmessage = (event) => {
@@ -87,65 +78,34 @@
                 currentMode = data.mode;
                 isRevealed = false; 
                 globalCorrectAns = '';
-                document.getElementById('quiz-view-box').style.display = 'block';
-                document.getElementById('leaderboard-view-box').style.display = 'none';
+                document.getElementById('view-question').innerText = `❓ CÂU HỎI: ${data.question}`;
                 document.getElementById('view-answer-banner').style.display = 'none';
+                document.getElementById('leaderboard-zone').style.display = 'none'; 
                 renderDisplayUI();
             } 
             else if (data.type === 'SYNC_DISPLAY_DATA') {
-                if(data.showStatsMode) {
-                    document.getElementById('quiz-view-box').style.display = 'none';
-                    document.getElementById('leaderboard-view-box').style.display = 'block';
-                    renderLeaderboard(data.players);
-                } else {
-                    document.getElementById('quiz-view-box').style.display = 'block';
-                    document.getElementById('leaderboard-view-box').style.display = 'none';
-                }
-
                 if (!isRevealed) {
                     dPlayersMap = data.players;
+                    // Điều khiển ẩn hiện bảng xếp hạng từ xa dựa trên controller
+                    document.getElementById('leaderboard-zone').style.display = data.showStatsMode ? 'block' : 'none';
+                    if (data.showStatsMode) { renderLeaderboard(); }
                     renderDisplayUI();
                 }
             }
             else if (data.type === 'COMMAND_DISPLAY_REVEAL') {
                 isRevealed = true;
                 globalCorrectAns = data.correctAns;
+                dPlayersMap = data.players; // Nhận map chứa Điểm/Thời gian đã cộng dồn từ Admin
                 
                 const banner = document.getElementById('view-answer-banner');
                 banner.innerText = `🎉 ĐÁP ÁN CHÍNH XÁC: ${globalCorrectAns.toUpperCase()}`;
                 banner.style.display = 'block';
                 
+                document.getElementById('leaderboard-zone').style.display = 'block'; 
+                renderLeaderboard();
                 renderDisplayUI(); 
             }
         };
-
-        function renderLeaderboard(players) {
-            const tbody = document.getElementById('leaderboard-rows');
-            tbody.innerHTML = '';
-            let sorted = [];
-            for (let name in players) { sorted.push({ name, ...players[name] }); }
-
-            sorted.sort((a, b) => {
-                let sA = parseFloat(a.totalScore) || 0;
-                let sB = parseFloat(b.totalScore) || 0;
-                if(sB !== sA) return sB - sA;
-                return (parseFloat(a.totalTime) || 0) - (parseFloat(b.totalTime) || 0);
-            });
-
-            sorted.forEach((p, i) => {
-                const tr = document.createElement('tr');
-                if(p.isEliminated) tr.style.opacity = '0.5';
-                let cls = (i < 3) ? `rank-${i + 1}` : '';
-                tr.innerHTML = `
-                    <td style="text-align:center;"><span class="rank-badge ${cls}">${i + 1}</span></td>
-                    <td><b>${p.name}</b></td>
-                    <td style="text-align: center; color:#2ecc71; font-weight:bold;">${p.totalScore ?? 0}</td>
-                    <td style="text-align: center; color:#3498db;">${p.totalTime ?? 0}s</td>
-                    <td>${p.isEliminated ? '❌ Bị Loại' : '🟢 Trên Sàn'}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
 
         function renderDisplayUI() {
             const listContainer = document.getElementById('view-players-list');
@@ -166,18 +126,26 @@
                         ansBadge = `<span class="p-ans-badge not-yet">...</span>`;
                     } else {
                         if (!isRevealed) {
-                            ansBadge = `<span class="p-ans-badge locked">${p.isLocked ? "🔒 Đã Chốt" : "✍️ Đang nhập"}</span>`;
+                            ansBadge = `<span class="p-ans-badge ${p.isLocked ? 'locked' : 'typing'}">
+                                ${p.isLocked ? "🔒 Đã Chốt" : "✍️ Đang nhập"}
+                            </span>`;
                         } else {
-                            ansBadge = `<span class="p-ans-badge" style="background:#2ecc71; color:#111">${p.answer}</span>`;
+                            // Khi khui đáp án: Show thông tin Tổng điểm & Tổng thời gian tích lũy
+                            let showTxt = `Chốt: ${p.answer} | 🏆 ${p.totalScore || 0}đ - ⏱️ ${p.totalTime || 0}s`;
+                            ansBadge = `<span class="p-ans-badge" style="background:#fff; color:#111; max-width:400px; font-size:14px; padding: 6px 10px;">${showTxt}</span>`;
+                            
+                            let isCorrect = false;
                             if (currentMode === 'MCQ') {
-                                row.style.backgroundColor = (p.answer === globalCorrectAns) ? "#27ae60" : "#c0392b";
+                                isCorrect = (p.answer === globalCorrectAns);
                             } else {
-                                row.style.backgroundColor = (p.answer.toLowerCase().trim() === globalCorrectAns.toLowerCase().trim()) ? "#27ae60" : "#c0392b";
+                                isCorrect = (p.answer.toLowerCase().trim() === globalCorrectAns.toLowerCase().trim());
                             }
+                            row.style.backgroundColor = isCorrect ? "#27ae60" : "#c0392b";
+                            row.style.borderLeftColor = isCorrect ? "#2ecc71" : "#e74c3c";
                         }
                     }
                 } else {
-                    ansBadge = `<span class="p-ans-badge" style="background:#e74c3c">LOẠI</span>`;
+                    ansBadge = `<span class="p-ans-badge" style="background:#e74c3c">LOẠI ☠️</span>`;
                 }
 
                 row.innerHTML = `<div class="p-name">👤 ${name}</div>${ansBadge}`;
@@ -186,6 +154,36 @@
             document.getElementById('view-total').innerText = total;
             document.getElementById('view-live').innerText = live;
             document.getElementById('view-dead').innerText = dead;
+        }
+
+        function renderLeaderboard() {
+            const lbContainer = document.getElementById('leaderboard-list');
+            lbContainer.innerHTML = '';
+            
+            // Chuyển đổi cấu trúc danh sách để sắp xếp thứ hạng
+            let list = [];
+            for (let name in dPlayersMap) {
+                list.push({ name: name, ...dPlayersMap[name] });
+            }
+
+            // Tiêu chí xếp hạng: Điểm cao xếp trước, nếu bằng điểm thì ai tốn ít thời gian hơn xếp trước
+            list.sort((a, b) => {
+                let scoreA = parseFloat(a.totalScore || 0);
+                let scoreB = parseFloat(b.totalScore || 0);
+                if (scoreB !== scoreA) return scoreB - scoreA;
+                return parseFloat(a.totalTime || 0) - parseFloat(b.totalTime || 0);
+            });
+
+            list.forEach((p, idx) => {
+                const item = document.createElement('div');
+                item.className = 'rank-item';
+                if(p.isEliminated) item.style.opacity = '0.5';
+                item.innerHTML = `
+                    <span><b>#${idx + 1}</b> ${p.name} ${p.isEliminated ? '(Loại)' : ''}</span>
+                    <span><b>${p.totalScore || 0}đ</b> (${p.totalTime || 0}s)</span>
+                `;
+                lbContainer.appendChild(item);
+            });
         }
     </script>
 </body>

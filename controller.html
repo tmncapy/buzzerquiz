@@ -73,6 +73,18 @@
                 <option value="SHORT_ANS">Trả lời nhanh (Nhập tự do)</option>
             </select>
             
+            <label>Nội dung câu hỏi:</label>
+            <input type="text" id="input-question" value="Vui lòng quan sát câu hỏi trên máy chiếu...">
+            
+            <div class="inline-group">
+                <div style="flex: 1;"><label>Đáp án A:</label><input type="text" id="ans-A" value="Đáp án A"></div>
+                <div style="flex: 1;"><label>Đáp án B:</label><input type="text" id="ans-B" value="Đáp án B"></div>
+            </div>
+            <div class="inline-group">
+                <div style="flex: 1;"><label>Đáp án C:</label><input type="text" id="ans-C" value="Đáp án C"></div>
+                <div style="flex: 1;"><label>Đáp án D:</label><input type="text" id="ans-D" value="Đáp án D"></div>
+            </div>
+
             <div class="inline-group">
                 <div>
                     <label>Thời gian (giây):</label>
@@ -85,8 +97,8 @@
             </div>
         </div>
 
-        <button id="btn-start-quiz" onclick="startQuiz()">▶ PHÁT LỆNH & BẮT ĐẦU TÍNH GIỜ</button>
-        <div class="timer-banner" id="control-timer">Thời gian: --</div>
+        <button id="btn-start-quiz" onclick="startQuiz()">▶ PHÁT ĐỀ & BẮT ĐẦU TÍNH GIỜ</button>
+        <div class="timer-banner" id="control-timer">Thời gian câu hỏi: --</div>
 
         <div class="control-zone-box">
             <b style="color: #2980b9; font-size: 15px;">🛠️ BƯỚC 1: CHỌN ĐÁP ÁN ĐÚNG (NẾU CHƠI TRẮC NGHIỆM):</b>
@@ -136,14 +148,13 @@
         let isDisplayShowingStats = false; 
         let questionCounter = 0;
 
-        // Cơ chế đồng bộ liên tục dữ liệu sang màn hình hiển thị lớn
+        // Cơ chế đồng bộ dữ liệu liên tục sang màn hình hiển thị lớn
         setInterval(() => { 
             channel.postMessage({ type: 'CONTROLLER_PING' }); 
             channel.postMessage({ type: 'SYNC_DISPLAY_DATA', players: playersMap, showStatsMode: isDisplayShowingStats });
         }, 500);
 
         function startQuiz() {
-            // Xóa sạch bộ đếm cũ trước khi bắt đầu phiên mới
             clearInterval(countdownInterval);
             finalCorrectAnswer = '';
             document.getElementById('input-correct-short').value = '';
@@ -153,11 +164,18 @@
             document.getElementById('btn-toggle-stats').innerText = "🏆 SHOW BẢNG TỔNG ĐIỂM / TIME";
 
             currentMode = document.getElementById('input-quiz-type').value;
+            const question = document.getElementById('input-question').value;
             questionCounter++; 
             currentMaxDuration = parseInt(document.getElementById('input-timer').value) || 15;
             currentMaxScore = parseFloat(document.getElementById('input-question-score').value) || 100;
 
-            // Thiết lập trạng thái ban đầu cho các thí sinh chưa bị loại
+            let answers = {
+                A: document.getElementById('ans-A').value,
+                B: document.getElementById('ans-B').value,
+                C: document.getElementById('ans-C').value,
+                D: document.getElementById('ans-D').value
+            };
+
             for (let p in playersMap) { 
                 playersMap[p].answer = 'Chưa trả lời'; 
                 playersMap[p].isLocked = false;
@@ -166,11 +184,13 @@
             }
             updateControllerUI();
 
-            // Phát lệnh đến toàn hệ thống qua BroadcastChannel
             const timestamp = Date.now(); 
+            // GỬI ĐẦY ĐỦ THAM SỐ: Đảm bảo index.html nhận đủ dữ liệu và không bị crash
             channel.postMessage({ 
                 type: 'START_QUIZ', 
                 mode: currentMode, 
+                question: question,
+                answers: answers,
                 duration: currentMaxDuration, 
                 timestamp: timestamp 
             });
@@ -179,7 +199,6 @@
             document.getElementById('btn-start-quiz').disabled = true;
             document.getElementById('control-timer').innerText = `⏳ CÒN LẠI: ${timeLeft}s`;
 
-            // Bắt đầu đếm ngược logic thời gian thực
             countdownInterval = setInterval(() => {
                 timeLeft--;
                 if (timeLeft <= 0) {
@@ -217,7 +236,11 @@
             }
 
             channel.postMessage({ type: 'COMMAND_DISPLAY_REVEAL', correctAns: finalAns, mode: currentMode });
-            document.getElementById('control-timer').innerText = `🎉 ĐÃ LỆNH SHOW ĐÁP ÁN [ ${finalAns} ] LÊN DISPLAY!`;
+            
+            // Đồng thời kích hoạt hiệu ứng hiển thị kết quả đúng/sai trên các thiết bị máy con
+            channel.postMessage({ type: 'SHOW_RESULT', correctAns: finalAns });
+            
+            document.getElementById('control-timer').innerText = `🎉 ĐÃ LỆNH SHOW ĐÁP ÁN [ ${finalAns} ] LÊN DISPLAY & MÁY CON!`;
         }
 
         function toggleDisplayStats() {

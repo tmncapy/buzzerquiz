@@ -7,7 +7,7 @@
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 900px; text-align: center; position: relative; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 850px; text-align: center; }
         h2 { color: #333; margin-bottom: 20px; }
         button { background: #27ae60; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 8px; cursor: pointer; transition: 0.3s; width: 100%; font-weight: bold; }
         button:hover { background: #219653; }
@@ -28,32 +28,32 @@
         .btn-show-display:hover { background: #8e44ad; }
         .btn-show-stats { background: #e67e22; font-size: 16px; font-weight: bold; padding: 14px; border-radius: 8px; border: none; color: white; cursor: pointer; }
         .btn-show-stats:hover { background: #d35400; }
-        .btn-show-stats.active-mode { background: #c0392b; border: 2px solid #fff; box-shadow: 0 0 10px rgba(0,0,0,0.3); }
+        .btn-show-stats.active-mode { background: #c0392b; border: 2px solid #fff; }
 
-        .player-list { text-align: left; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px; max-height: 450px; overflow-y: auto; }
+        .player-list { text-align: left; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px; max-height: 400px; overflow-y: auto; }
         .player-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #ddd; gap: 10px; }
         .player-item.eliminated-row { background: #fce4e4; opacity: 0.7; }
         .player-info { display: flex; flex-direction: column; flex: 1; }
         .player-name-text { font-weight: bold; font-size: 16px; }
         .time-elapsed { font-size: 12px; color: #2980b9; font-weight: bold; margin-top: 2px; }
         
+        /* CSS KHU VỰC TEXTBOX ĐIỂM / TIME KHÔNG DÙNG THANH CUỘN */
         .player-edit-inputs { display: flex; gap: 10px; align-items: center; margin-right: 5px; }
         .player-edit-inputs div { display: flex; flex-direction: column; align-items: center; }
         .player-edit-inputs label { font-size: 11px; color: #555; font-weight: bold; margin-bottom: 3px; }
-        .input-stat-edit { width: 75px !important; padding: 6px !important; font-size: 14px !important; margin-bottom: 0 !important; text-align: center; font-weight: bold; border: 1px solid #ccc !important; border-radius: 6px !important;}
+        .input-stat-edit { width: 85px !important; padding: 6px !important; font-size: 14px !important; margin-bottom: 0 !important; text-align: center; font-weight: bold; border: 1px solid #ccc !important; border-radius: 6px !important;}
 
-        .action-btns { display: flex; gap: 6px; align-items: center; }
+        .action-btns { display: flex; gap: 5px; align-items: center; }
         .btn-kick { background: #e74c3c; padding: 6px 10px; font-size: 13px; border-radius: 4px; border: none; color: white; cursor: pointer; font-weight: bold; }
         .btn-revive { background: #2ecc71; padding: 6px 10px; font-size: 13px; border-radius: 4px; border: none; color: white; cursor: pointer; font-weight: bold; }
         .btn-history { background: #34495e; padding: 6px 10px; font-size: 13px; border-radius: 4px; border: none; color: white; cursor: pointer; font-weight: bold; }
-        .btn-history:hover { background: #2c3e50; }
 
         .badge { background: #7f8c8d; color: white; padding: 5px 10px; border-radius: 4px; font-size: 13px; font-weight: bold; min-width: 90px; text-align: center; word-break: break-all; }
         .status-badge { font-size: 12px; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px;}
         .status-lock { background: #e74c3c; color: white; }
         .status-typing { background: #f39c12; color: white; }
 
-        /* CSS HỘP THOẠI XEM LỊCH SỬ (MODAL POPUP) */
+        /* MODAL POPUP XEM LỊCH SỬ */
         .modal-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index: 999; }
         .modal-content { background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 600px; text-align: left; max-height: 80vh; overflow-y: auto; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
@@ -76,15 +76,15 @@
             </select>
             
             <label>Nội dung câu hỏi:</label>
-            <input type="text" id="input-question" value="Câu hỏi số 1:">
+            <input type="text" id="input-question" value="...">
             
             <div class="inline-group">
-                <div style="flex: 1;"><label>Đáp án A:</label><input type="text" id="ans-A" value="Đáp án A"></div>
-                <div style="flex: 1;"><label>Đáp án B:</label><input type="text" id="ans-B" value="Đáp án B"></div>
+                <div style="flex: 1;"><label>Đáp án A:</label><input type="text" id="ans-A" value="..."></div>
+                <div style="flex: 1;"><label>Đáp án B:</label><input type="text" id="ans-B" value="..."></div>
             </div>
             <div class="inline-group">
-                <div style="flex: 1;"><label>Đáp án C:</label><input type="text" id="ans-C" value="Đáp án C"></div>
-                <div style="flex: 1;"><label>Đáp án D:</label><input type="text" id="ans-D" value="Đáp án D"></div>
+                <div style="flex: 1;"><label>Đáp án C:</label><input type="text" id="ans-C" value="..."></div>
+                <div style="flex: 1;"><label>Đáp án D:</label><input type="text" id="ans-D" value="..."></div>
             </div>
 
             <div class="inline-group">
@@ -118,9 +118,9 @@
 
             <hr style="border: 0; border-top: 1px dashed #ccc; margin: 15px 0;">
 
-            <b style="color: #8e44ad; font-size: 15px;">📢 BƯỚC 2: QUẢN LÝ MÀN HÌNH TRÌNH CHIẾU (DISPLAY):</b>
+            <b style="color: #8e44ad; font-size: 15px;">📢 BƯỚC 2: CÔNG BỐ KẾT QUẢ & ĐIỀU KHIỂN TRÌNH CHIẾU:</b>
             <div class="display-controls">
-                <button id="btn-trigger-reveal" class="btn-show-display" onclick="sendRevealCommand()">👁️ SHOW ĐÁP ÁN CÂU HỎI</button>
+                <button id="btn-trigger-reveal" class="btn-show-display" onclick="sendRevealCommand()">👁️ SHOW ĐÁP ÁN LÊN DISPLAY</button>
                 <button id="btn-toggle-stats" class="btn-show-stats" onclick="toggleDisplayStats()">🏆 SHOW BẢNG TỔNG ĐIỂM / TIME</button>
             </div>
         </div>
@@ -135,8 +135,7 @@
                 <h3 id="modal-player-title" style="margin:0;">Lịch sử trả lời</h3>
                 <span class="modal-close" onclick="closeHistoryModal()">&times;</span>
             </div>
-            <div id="modal-history-body" style="overflow-x:auto;">
-                </div>
+            <div id="modal-history-body" style="overflow-x:auto;"></div>
         </div>
     </div>
 
@@ -148,8 +147,8 @@
         let currentMaxDuration = 15;
         let currentMaxScore = 100;
         let finalCorrectAnswer = '';
-        let isDisplayShowingStats = false; // Trạng thái màn hình lớn đang show bảng điểm hay không
-        let currentQuestionContent = ''; // Lưu tên câu hỏi hiện tại để làm lịch sử
+        let isDisplayShowingStats = false; 
+        let currentQuestionContent = ''; 
 
         setInterval(() => { 
             channel.postMessage({ type: 'CONTROLLER_PING' }); 
@@ -161,7 +160,6 @@
             finalCorrectAnswer = '';
             document.getElementById('input-correct-short').value = '';
             
-            // Tắt chế độ show điểm trên màn hình lớn khi sang câu hỏi mới
             isDisplayShowingStats = false;
             document.getElementById('btn-toggle-stats').classList.remove('active-mode');
             document.getElementById('btn-toggle-stats').innerText = "🏆 SHOW BẢNG TỔNG ĐIỂM / TIME";
@@ -209,11 +207,9 @@
         function selectMcqAnswer(key) {
             clearInterval(countdownInterval);
             finalCorrectAnswer = key;
-            document.getElementById('control-timer').innerText = `🎯 Đã chọn Trắc nghiệm [ ${key} ]. Sẵn sàng bấm nút SHOW ĐÁP ÁN!`;
+            document.getElementById('control-timer').innerText = `🎯 Đã chọn Trắc nghiệm [ ${key} ]. Sẵn sàng bấm nút SHOW màu tím!`;
             document.getElementById('btn-start-quiz').disabled = false;
             channel.postMessage({ type: 'TIME_UP', duration: currentMaxDuration });
-            
-            // Lưu lịch sử sau khi có đáp án chính thức
             saveQuestionHistory(key);
         }
 
@@ -228,15 +224,13 @@
                 const textAns = document.getElementById('input-correct-short').value.trim();
                 if (!textAns) { alert("Vui lòng nhập từ khóa đáp án tự luận đúng ở Bước 1B trước!"); return; }
                 finalAns = textAns;
-                // Lưu lịch sử đối với câu tự luận khi bấm Show kết quả công bố
                 saveQuestionHistory(finalAns);
             }
 
             channel.postMessage({ type: 'COMMAND_DISPLAY_REVEAL', correctAns: finalAns, mode: currentMode });
-            document.getElementById('control-timer').innerText = `🎉 ĐÃ SHOW ĐÁP ÁN [ ${finalAns} ] LÊN DISPLAY!`;
+            document.getElementById('control-timer').innerText = `🎉 ĐÃ LỆNH SHOW ĐÁP ÁN [ ${finalAns} ] LÊN DISPLAY!`;
         }
 
-        // CHỨC NĂNG 1: Bật/Tắt hiển thị bảng Tổng Điểm & Thời gian lên màn hình lớn
         function toggleDisplayStats() {
             isDisplayShowingStats = !isDisplayShowingStats;
             const btn = document.getElementById('btn-toggle-stats');
@@ -249,7 +243,6 @@
             }
         }
 
-        // CHỨC NĂNG 2: Ghi dữ liệu vào lịch sử câu hỏi của từng người chơi
         function saveQuestionHistory(correctAns) {
             for(let name in playersMap) {
                 let p = playersMap[name];
@@ -262,10 +255,7 @@
                     isRight = (p.answer.toLowerCase().trim() === correctAns.toLowerCase().trim());
                 }
 
-                // Khởi tạo mảng lịch sử nếu chưa có
                 if(!p.history) p.history = [];
-                
-                // Tránh ghi trùng một câu hỏi nhiều lần
                 let exist = p.history.some(h => h.question === currentQuestionContent);
                 if(!exist) {
                     p.history.push({
@@ -280,14 +270,13 @@
             }
         }
 
-        // Mở popup Xem chi tiết lịch sử câu trả lời
         function showHistory(name) {
             const p = playersMap[name];
-            document.getElementById('modal-player-title').innerText = `📜 Lịch sử thi đấu: ${name}`;
+            document.getElementById('modal-player-title').innerText = `📜 Lịch sử trả lời: ${name}`;
             const body = document.getElementById('modal-history-body');
             
             if(!p.history || p.history.length === 0) {
-                body.innerHTML = `<p style="color:#7f8c8d; font-style:italic; text-align:center; padding:20px 0;">Thí sinh này chưa tham gia trả lời câu hỏi nào hoặc chưa có dữ liệu kết quả.</p>`;
+                body.innerHTML = `<p style="color:#7f8c8d; font-style:italic; text-align:center; padding:20px 0;">Thí sinh chưa có lịch sử câu hỏi nào.</p>`;
             } else {
                 let html = `<table class="history-table">
                     <thead>
@@ -302,8 +291,8 @@
                     <tbody>`;
                 p.history.forEach(h => {
                     html += `<tr>
-                        <td><b>${h.question}</b> <small style="color:#7f8c8d">(${h.mode})</small></td>
-                        <td><mark style="padding:2px 5px; border-radius:3px;">${h.playerAns}</mark></td>
+                        <td><b>${h.question}</b></td>
+                        <td><mark style="padding:2px 5px;">${h.playerAns}</mark></td>
                         <td>${h.correctAns}</td>
                         <td class="${h.isCorrect ? 'hist-correct' : 'hist-wrong'}">${h.isCorrect ? '✓ ĐÚNG' : '✕ SAI'}</td>
                         <td><code>${h.timeTaken}</code></td>
@@ -344,7 +333,7 @@
                         isEliminated: false,
                         totalScore: '0', 
                         totalTime: '0',
-                        history: [] // Mảng lưu trữ các câu đã qua
+                        history: []
                     };
                 }
                 updateControllerUI();
@@ -386,7 +375,7 @@
                 if (p.answer === 'Chưa trả lời' || p.isEliminated) statusIcon = '';
 
                 let actionArea = p.isEliminated 
-                    ? `<button class="btn-revive" onclick="revivePlayer('${name}')">❤️ Cứu</button>` 
+                    ? `<button class="btn-revive" onclick="revivePlayer('${name}')">❤️ Hồi sinh</button>` 
                     : `<button class="btn-kick" onclick="kickPlayer('${name}')">💥 Loại</button>`;
 
                 const scoreInputId = `score-${name.replace(/\s+/g, '_')}`;
@@ -395,7 +384,7 @@
                 item.innerHTML = `
                     <div class="player-info">
                         <span class="player-name-text">👤 ${name} ${p.isEliminated ? '<b>(LOẠI)</b>' : statusIcon}</span>
-                        ${!p.isEliminated && p.answer !== 'Chưa trả lời' ? `<span class="time-elapsed">⏱️ Trả lời lúc: ${p.timeTaken}s | 🎯 Tạm tính: ${p.calculatedScore}đ</span>` : ''}
+                        ${!p.isEliminated && p.answer !== 'Chưa trả lời' ? `<span class="time-elapsed">⏱️ Lúc: ${p.timeTaken}s | 🎯 Tính: ${p.calculatedScore}đ</span>` : ''}
                     </div>
                     
                     <div class="player-edit-inputs">

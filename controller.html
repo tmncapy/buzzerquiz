@@ -37,7 +37,6 @@
         .player-name-text { font-weight: bold; font-size: 16px; }
         .time-elapsed { font-size: 12px; color: #2980b9; font-weight: bold; margin-top: 2px; }
         
-        /* CSS KHU VỰC TEXTBOX ĐIỂM / TIME KHÔNG DÙNG THANH CUỘN */
         .player-edit-inputs { display: flex; gap: 10px; align-items: center; margin-right: 5px; }
         .player-edit-inputs div { display: flex; flex-direction: column; align-items: center; }
         .player-edit-inputs label { font-size: 11px; color: #555; font-weight: bold; margin-bottom: 3px; }
@@ -53,7 +52,6 @@
         .status-lock { background: #e74c3c; color: white; }
         .status-typing { background: #f39c12; color: white; }
 
-        /* MODAL POPUP XEM LỊCH SỬ */
         .modal-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index: 999; }
         .modal-content { background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 600px; text-align: left; max-height: 80vh; overflow-y: auto; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
@@ -75,32 +73,20 @@
                 <option value="SHORT_ANS">Trả lời nhanh (Nhập tự do)</option>
             </select>
             
-            <label>Nội dung câu hỏi:</label>
-            <input type="text" id="input-question" value="...">
-            
-            <div class="inline-group">
-                <div style="flex: 1;"><label>Đáp án A:</label><input type="text" id="ans-A" value="..."></div>
-                <div style="flex: 1;"><label>Đáp án B:</label><input type="text" id="ans-B" value="..."></div>
-            </div>
-            <div class="inline-group">
-                <div style="flex: 1;"><label>Đáp án C:</label><input type="text" id="ans-C" value="..."></div>
-                <div style="flex: 1;"><label>Đáp án D:</label><input type="text" id="ans-D" value="..."></div>
-            </div>
-
             <div class="inline-group">
                 <div>
                     <label>Thời gian (giây):</label>
                     <input type="number" id="input-timer" value="15" min="5" style="width: 120px;">
                 </div>
                 <div style="flex-grow: 1;">
-                    <label>Số điểm tối đa:</label>
+                    <label>Số điểm tối đa câu này:</label>
                     <input type="number" id="input-question-score" value="100" min="1" style="width: 100%;">
                 </div>
             </div>
         </div>
 
-        <button id="btn-start-quiz" onclick="startQuiz()">▶ PHÁT ĐỀ & BẮT ĐẦU TÍNH GIỜ</button>
-        <div class="timer-banner" id="control-timer">Thời gian câu hỏi: --</div>
+        <button id="btn-start-quiz" onclick="startQuiz()">▶ PHÁT LỆNH & BẮT ĐẦU TÍNH GIỜ</button>
+        <div class="timer-banner" id="control-timer">Thời gian: --</div>
 
         <div class="control-zone-box">
             <b style="color: #2980b9; font-size: 15px;">🛠️ BƯỚC 1: CHỌN ĐÁP ÁN ĐÚNG (NẾU CHƠI TRẮC NGHIỆM):</b>
@@ -148,7 +134,7 @@
         let currentMaxScore = 100;
         let finalCorrectAnswer = '';
         let isDisplayShowingStats = false; 
-        let currentQuestionContent = ''; 
+        let questionCounter = 0;
 
         setInterval(() => { 
             channel.postMessage({ type: 'CONTROLLER_PING' }); 
@@ -165,16 +151,9 @@
             document.getElementById('btn-toggle-stats').innerText = "🏆 SHOW BẢNG TỔNG ĐIỂM / TIME";
 
             currentMode = document.getElementById('input-quiz-type').value;
-            currentQuestionContent = document.getElementById('input-question').value;
+            questionCounter++;
             currentMaxDuration = parseInt(document.getElementById('input-timer').value) || 15;
             currentMaxScore = parseFloat(document.getElementById('input-question-score').value) || 100;
-            
-            let answers = {
-                A: document.getElementById('ans-A').value,
-                B: document.getElementById('ans-B').value,
-                C: document.getElementById('ans-C').value,
-                D: document.getElementById('ans-D').value
-            };
 
             for (let p in playersMap) { 
                 playersMap[p].answer = 'Chưa trả lời'; 
@@ -185,7 +164,7 @@
             updateControllerUI();
 
             const timestamp = Date.now(); 
-            channel.postMessage({ type: 'START_QUIZ', mode: currentMode, question: currentQuestionContent, answers, duration: currentMaxDuration, timestamp });
+            channel.postMessage({ type: 'START_QUIZ', mode: currentMode, duration: currentMaxDuration, timestamp });
 
             let timeLeft = currentMaxDuration;
             document.getElementById('btn-start-quiz').disabled = true;
@@ -244,6 +223,7 @@
         }
 
         function saveQuestionHistory(correctAns) {
+            let qName = `Câu hỏi số ${questionCounter}`;
             for(let name in playersMap) {
                 let p = playersMap[name];
                 if(p.isEliminated) continue;
@@ -256,11 +236,10 @@
                 }
 
                 if(!p.history) p.history = [];
-                let exist = p.history.some(h => h.question === currentQuestionContent);
+                let exist = p.history.some(h => h.question === qName);
                 if(!exist) {
                     p.history.push({
-                        question: currentQuestionContent,
-                        mode: currentMode,
+                        question: qName,
                         playerAns: p.answer,
                         correctAns: correctAns,
                         isCorrect: isRight,
@@ -281,8 +260,8 @@
                 let html = `<table class="history-table">
                     <thead>
                         <tr>
-                            <th>Câu hỏi</th>
-                            <th>Đã chọn</th>
+                            <th>Phiên chơi</th>
+                            <th>Đã chốt</th>
                             <th>Đáp án đúng</th>
                             <th>Kết quả</th>
                             <th>Thời gian</th>
@@ -316,9 +295,7 @@
         }
 
         function updatePlayerStatsManual(name, field, value) {
-            if (playersMap[name]) {
-                playersMap[name][field] = value;
-            }
+            if (playersMap[name]) { playersMap[name][field] = value; }
         }
 
         channel.onmessage = (event) => {

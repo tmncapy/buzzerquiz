@@ -149,7 +149,6 @@
         let questionCounter = 0;
         let isQuizRunning = false;
 
-        // Định kỳ đồng bộ thông tin sang Display
         setInterval(() => { 
             channel.postMessage({ type: 'CONTROLLER_PING' }); 
             if (!isQuizRunning) {
@@ -243,7 +242,6 @@
                 finalAns = textAns;
             }
 
-            // Thực hiện tính toán cộng dồn điểm tích lũy vào hệ thống dữ liệu gốc
             for(let name in playersMap) {
                 let p = playersMap[name];
                 if(p.isEliminated) continue;
@@ -269,7 +267,7 @@
 
             channel.postMessage({ type: 'COMMAND_DISPLAY_REVEAL', correctAns: finalAns, mode: currentMode, players: playersMap });
             channel.postMessage({ type: 'SHOW_RESULT', correctAns: finalAns });
-            document.getElementById('control-timer').innerText = `🎉 ĐÃ SHOW ĐÁP ÁN [ ${finalAns} ] & CẬP NHẬT BXH!`;
+            document.getElementById('control-timer').innerText = `🎉 ĐÃ SHOW ĐÁP ÁN [ ${finalAns} ]!`;
             updateControllerUI();
         }
 
@@ -278,7 +276,7 @@
             const btn = document.getElementById('btn-toggle-stats');
             if(isDisplayShowingStats) {
                 btn.classList.add('active-mode');
-                btn.innerText = "📺 ĐANG SHOW BẢNG ĐIỂM (BẤM TẮT)";
+                btn.innerText = "📺 ĐANG SHOW BẢNG ĐIỂM & BXH (TẮT)";
             } else {
                 btn.classList.remove('active-mode');
                 btn.innerText = "🏆 SHOW BẢNG TỔNG ĐIỂM / TIME";

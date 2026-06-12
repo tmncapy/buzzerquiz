@@ -136,12 +136,14 @@
         let isDisplayShowingStats = false; 
         let questionCounter = 0;
 
+        // Cơ chế đồng bộ liên tục dữ liệu sang màn hình hiển thị lớn
         setInterval(() => { 
             channel.postMessage({ type: 'CONTROLLER_PING' }); 
             channel.postMessage({ type: 'SYNC_DISPLAY_DATA', players: playersMap, showStatsMode: isDisplayShowingStats });
         }, 500);
 
         function startQuiz() {
+            // Xóa sạch bộ đếm cũ trước khi bắt đầu phiên mới
             clearInterval(countdownInterval);
             finalCorrectAnswer = '';
             document.getElementById('input-correct-short').value = '';
@@ -151,10 +153,11 @@
             document.getElementById('btn-toggle-stats').innerText = "🏆 SHOW BẢNG TỔNG ĐIỂM / TIME";
 
             currentMode = document.getElementById('input-quiz-type').value;
-            questionCounter++;
+            questionCounter++; 
             currentMaxDuration = parseInt(document.getElementById('input-timer').value) || 15;
             currentMaxScore = parseFloat(document.getElementById('input-question-score').value) || 100;
 
+            // Thiết lập trạng thái ban đầu cho các thí sinh chưa bị loại
             for (let p in playersMap) { 
                 playersMap[p].answer = 'Chưa trả lời'; 
                 playersMap[p].isLocked = false;
@@ -163,13 +166,20 @@
             }
             updateControllerUI();
 
+            // Phát lệnh đến toàn hệ thống qua BroadcastChannel
             const timestamp = Date.now(); 
-            channel.postMessage({ type: 'START_QUIZ', mode: currentMode, duration: currentMaxDuration, timestamp });
+            channel.postMessage({ 
+                type: 'START_QUIZ', 
+                mode: currentMode, 
+                duration: currentMaxDuration, 
+                timestamp: timestamp 
+            });
 
             let timeLeft = currentMaxDuration;
             document.getElementById('btn-start-quiz').disabled = true;
             document.getElementById('control-timer').innerText = `⏳ CÒN LẠI: ${timeLeft}s`;
 
+            // Bắt đầu đếm ngược logic thời gian thực
             countdownInterval = setInterval(() => {
                 timeLeft--;
                 if (timeLeft <= 0) {
@@ -223,7 +233,7 @@
         }
 
         function saveQuestionHistory(correctAns) {
-            let qName = `Câu hỏi số ${questionCounter}`;
+            let qName = `Phiên số ${questionCounter}`;
             for(let name in playersMap) {
                 let p = playersMap[name];
                 if(p.isEliminated) continue;

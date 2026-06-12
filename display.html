@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Màn hình Trình Chiếu</title>
+    <title>Màn hình Trình Chiếu Phụ trợ</title>
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #1a252f; color: white; margin: 0; padding: 20px; min-height: 100vh; }
@@ -15,7 +15,6 @@
         .stat-box.elim { border-color: #e74c3c; }
         .stat-box.total { border-color: #3498db; }
         .stat-num { font-size: 36px; font-weight: bold; margin-top: 5px; }
-        .question-banner { background: #34495e; padding: 20px; border-radius: 8px; font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 25px; border-left: 8px solid #f1c40f; }
         
         .player-monitor-list { display: flex; flex-direction: column; gap: 10px; max-height: 650px; overflow-y: auto; }
         .p-row { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 6px; background: #34495e; border-left: 5px solid #7f8c8d; }
@@ -25,7 +24,6 @@
         .p-ans-badge.locked { background: #e67e22; }
         .p-ans-badge.not-yet { background: #7f8c8d; }
 
-        /* STYLE BẢNG TỔNG ĐIỂM TRÊN DISPLAY */
         .leaderboard-container { background: #34495e; padding: 20px; border-radius: 8px; width: 100%; }
         .leaderboard-table { width: 100%; border-collapse: collapse; color: white; margin-top: 15px; }
         .leaderboard-table th, .leaderboard-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #4f5d73; font-size: 18px; }
@@ -38,7 +36,7 @@
     </style>
 </head>
 <body>
-    <h1 style="font-size: 32px; margin-bottom: 20px;">🏟️ RUNG CHUÔNG VÀNG - ACESTUDIO</h1>
+    <h1 style="font-size: 32px; margin-bottom: 20px;">🏟️ ĐỒNG BỘ ĐÁP ÁN - ACESTUDIO</h1>
     <div class="container">
         
         <div class="main-panel">
@@ -48,13 +46,13 @@
                 <div class="stat-box elim"><div>Đã bị loại</div><div class="stat-num" id="view-dead" style="color: #e74c3c;">0</div></div>
             </div>
 
-            <div id="quiz-view-box">
-                <div class="question-banner" id="view-question">Đang đợi phát câu hỏi...</div>
-                <h2 id="view-answer-banner" style="color: #f1c40f; background: #243342; padding: 15px; border-radius: 8px; display:none;"></h2>
+            <div id="quiz-view-box" style="padding: 20px; background: #34495e; border-radius: 8px;">
+                <h2 style="color: #bdc3c7; margin: 10px 0;">HỆ THỐNG ĐANG CHẠY CÂU HỎI...</h2>
+                <h2 id="view-answer-banner" style="color: #f1c40f; background: #243342; padding: 20px; border-radius: 8px; display:none; font-size: 26px;"></h2>
             </div>
 
             <div id="leaderboard-view-box" class="leaderboard-container" style="display: none;">
-                <h2>🏆 BẢNG THÀNH TÍCH THÍ SINH</h2>
+                <h2>🏆 BẢNG TỔNG ĐIỂM THÍ SINH</h2>
                 <table class="leaderboard-table">
                     <thead>
                         <tr>
@@ -71,7 +69,7 @@
         </div>
 
         <div class="side-panel">
-            <h2>SÀN ĐẤU</h2>
+            <h2>SÀN ĐẤU LIVE</h2>
             <div class="player-monitor-list" id="view-players-list"></div>
         </div>
     </div>
@@ -91,7 +89,6 @@
                 globalCorrectAns = '';
                 document.getElementById('quiz-view-box').style.display = 'block';
                 document.getElementById('leaderboard-view-box').style.display = 'none';
-                document.getElementById('view-question').innerText = `❓ ${data.question}`;
                 document.getElementById('view-answer-banner').style.display = 'none';
                 renderDisplayUI();
             } 
@@ -128,7 +125,6 @@
             let sorted = [];
             for (let name in players) { sorted.push({ name, ...players[name] }); }
 
-            // Sắp xếp: Điểm cao xếp trước, nếu bằng điểm nhau thì tổng thời gian ít hơn xếp trước
             sorted.sort((a, b) => {
                 let sA = parseFloat(a.totalScore) || 0;
                 let sB = parseFloat(b.totalScore) || 0;

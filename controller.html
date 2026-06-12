@@ -4,10 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bản điều khiển - Controller Admin</title>
+    <script src="/socket.io/socket.io.js"></script>
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 850px; text-align: center; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 800px; text-align: center; }
         h2 { color: #333; margin-bottom: 20px; }
         button { background: #27ae60; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 8px; cursor: pointer; transition: 0.3s; width: 100%; font-weight: bold; }
         button:hover { background: #219653; }
@@ -17,91 +18,49 @@
         .quiz-setup label { font-weight: bold; display: block; margin-top: 8px; color: #555; }
         .inline-group { display: flex; gap: 10px; margin-bottom: 10px; }
         .timer-banner { font-size: 24px; font-weight: bold; color: #e74c3c; margin: 15px 0; }
-        
-        .control-zone-box { background: #e8f4f8; padding: 15px; border-radius: 8px; margin: 15px 0; border: 2px dashed #2980b9; text-align: left; }
         .btn-grade-group { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; margin-bottom: 15px; }
         .btn-g { font-weight: bold; font-size: 18px; padding: 12px; border-radius: 6px; border: none; color: white; cursor: pointer; }
-        .bg-A { background: #e74c3c; } .bg-B { background: #3498db; } .bg-C { background: #2ecc71; } .bg-D { background: #f1c40f; }
-
-        .display-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .btn-show-display { background: #9b59b6; font-size: 16px; font-weight: bold; padding: 14px; border-radius: 8px; border: none; color: white; cursor: pointer; }
-        .btn-show-display:hover { background: #8e44ad; }
-        .btn-show-stats { background: #e67e22; font-size: 16px; font-weight: bold; padding: 14px; border-radius: 8px; border: none; color: white; cursor: pointer; }
-        .btn-show-stats:hover { background: #d35400; }
-        .btn-show-stats.active-mode { background: #c0392b; border: 2px solid #fff; }
-
-        .player-list { text-align: left; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px; max-height: 400px; overflow-y: auto; }
-        .player-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #ddd; gap: 10px; }
-        .player-item.eliminated-row { background: #fce4e4; opacity: 0.7; }
-        .player-info { display: flex; flex-direction: column; flex: 1; }
+        .bg-A { background: #e74c3c; } .bg-B { background: #3498db; } .bg-C { background: #4b0082; } .bg-D { background: #f1c40f; }
+        .player-list { text-align: left; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px; max-height: 300px; overflow-y: auto; }
+        .player-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #ddd; }
+        .player-item.eliminated-row { opacity: 0.5; background: #fce4e4; }
+        .player-info { display: flex; flex-direction: column; }
         .player-name-text { font-weight: bold; font-size: 16px; }
-        .time-elapsed { font-size: 12px; color: #2980b9; font-weight: bold; margin-top: 2px; }
-        
-        .player-edit-inputs { display: flex; gap: 10px; align-items: center; margin-right: 5px; }
-        .player-edit-inputs div { display: flex; flex-direction: column; align-items: center; }
-        .player-edit-inputs label { font-size: 11px; color: #555; font-weight: bold; margin-bottom: 3px; }
-        .input-stat-edit { width: 85px !important; padding: 6px !important; font-size: 14px !important; margin-bottom: 0 !important; text-align: center; font-weight: bold; border: 1px solid #ccc !important; border-radius: 6px !important;}
-
-        .action-btns { display: flex; gap: 5px; align-items: center; }
-        .btn-kick { background: #e74c3c; padding: 6px 10px; font-size: 13px; border-radius: 4px; border: none; color: white; cursor: pointer; font-weight: bold; }
-        .btn-revive { background: #2ecc71; padding: 6px 10px; font-size: 13px; border-radius: 4px; border: none; color: white; cursor: pointer; font-weight: bold; }
-        .btn-history { background: #34495e; padding: 6px 10px; font-size: 13px; border-radius: 4px; border: none; color: white; cursor: pointer; font-weight: bold; }
-
-        .badge { background: #7f8c8d; color: white; padding: 5px 10px; border-radius: 4px; font-size: 13px; font-weight: bold; min-width: 90px; text-align: center; word-break: break-all; }
-        .status-badge { font-size: 12px; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: 5px;}
-        .status-lock { background: #e74c3c; color: white; }
+        .time-elapsed { font-size: 12px; color: #2980b9; font-weight: bold; }
+        .action-btns { display: flex; gap: 10px; align-items: center; }
+        .btn-kick { background: #e74c3c; padding: 5px 10px; font-size: 12px; border-radius: 4px; border: none; color: white; cursor: pointer; }
+        .btn-revive { background: #2ecc71; padding: 5px 10px; font-size: 12px; border-radius: 4px; border: none; color: white; cursor: pointer; }
+        .badge { background: #7f8c8d; color: white; padding: 5px 10px; border-radius: 4px; font-size: 14px; font-weight: bold; min-width: 90px; text-align: center; }
+        .status-badge { font-size: 11px; padding: 2px 4px; border-radius: 4px; font-weight: bold; margin-left: 5px;}
+        .status-lock { background: #27ae60; color: white; }
         .status-typing { background: #f39c12; color: white; }
-
-        .modal-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index: 999; }
-        .modal-content { background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 600px; text-align: left; max-height: 80vh; overflow-y: auto; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
-        .modal-close { font-size: 24px; cursor: pointer; color: #7f8c8d; font-weight: bold; }
-        .history-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        .history-table th, .history-table td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 14px; }
-        .history-table th { background: #f4f6f7; font-weight: bold; }
-        .hist-correct { color: #2ecc71; font-weight: bold; }
-        .hist-wrong { color: #e74c3c; font-weight: bold; }
+        .input-score-edit { width: 70px; padding: 4px; text-align: center; font-size: 14px; font-weight: bold; margin-left: 5px; border-radius: 4px; border: 1px solid #ccc; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h2>BẢN ĐIỀU KHIỂN (CONTROLLER)</h2>
+        <h2>BẢNG ĐIỀU KHIỂN QUẢN TRỊ (ADMIN ONLINE)</h2>
         <div class="quiz-setup">
-            <label>Loại câu hỏi (Chế độ chơi):</label>
+            <label>Loại câu hỏi:</label>
             <select id="input-quiz-type">
-                <option value="MCQ">Trắc nghiệm lựa chọn (A, B, C, D)</option>
-                <option value="SHORT_ANS">Trả lời nhanh (Nhập tự do)</option>
+                <option value="MCQ">Trắc nghiệm (A, B, C, D)</option>
+                <option value="SHORT_ANS">Trả lời ngắn (Tự luận)</option>
             </select>
             
             <label>Nội dung câu hỏi:</label>
-            <input type="text" id="input-question" value="Quan sát câu hỏi hiển thị trên máy chiếu...">
+            <input type="text" id="input-question" value="Quan sát câu hỏi trên màn hình máy chiếu...">
             
             <div class="inline-group">
-                <div style="flex: 1;"><label>Đáp án A:</label><input type="text" id="ans-A" value="Đáp án A"></div>
-                <div style="flex: 1;"><label>Đáp án B:</label><input type="text" id="ans-B" value="Đáp án B"></div>
-            </div>
-            <div class="inline-group">
-                <div style="flex: 1;"><label>Đáp án C:</label><input type="text" id="ans-C" value="Đáp án C"></div>
-                <div style="flex: 1;"><label>Đáp án D:</label><input type="text" id="ans-D" value="Đáp án D"></div>
-            </div>
-
-            <div class="inline-group">
-                <div>
-                    <label>Thời gian (giây):</label>
-                    <input type="number" id="input-timer" value="15" min="5" style="width: 120px;">
-                </div>
-                <div style="flex-grow: 1;">
-                    <label>Số điểm tối đa câu này:</label>
-                    <input type="number" id="input-question-score" value="100" min="1" style="width: 100%;">
-                </div>
+                <div><label>Thời gian (giây):</label><input type="number" id="input-timer" value="15" min="5" style="width: 100px;"></div>
+                <div style="flex-grow: 1;"><label>Điểm tối đa câu này:</label><input type="number" id="input-question-score" value="100" style="width: 100px;"></div>
             </div>
         </div>
 
-        <button id="btn-start-quiz" onclick="startQuiz()">▶ PHÁT ĐỀ & BẮT ĐẦU TÍNH GIỜ</button>
+        <button id="btn-start-quiz" onclick="startQuiz()">▶ PHÁT ĐỀ & TÍNH GIỜ</button>
         <div class="timer-banner" id="control-timer">Thời gian câu hỏi: --</div>
 
-        <div class="control-zone-box">
-            <b style="color: #2980b9; font-size: 15px;">🛠️ BƯỚC 1: CHỌN ĐÁP ÁN ĐÚNG (NẾU CHƠI TRẮC NGHIỆM):</b>
+        <div style="background: #e8f4f8; padding: 15px; border-radius: 8px; margin: 15px 0; border: 1px dashed #2980b9; text-align: left;">
+            <b style="color: #2980b9;">BƯỚC 1: CHỌN ĐÁP ÁN ĐÚNG (NẾU CHƠI TRẮC NGHIỆM):</b>
             <div class="btn-grade-group">
                 <button class="btn-g bg-A" onclick="selectMcqAnswer('A')">A</button>
                 <button class="btn-g bg-B" onclick="selectMcqAnswer('B')">B</button>
@@ -109,75 +68,44 @@
                 <button class="btn-g bg-D" onclick="selectMcqAnswer('D')">D</button>
             </div>
             
-            <hr style="border: 0; border-top: 1px dashed #ccc; margin: 15px 0;">
-            
-            <b style="color: #d35400; font-size: 15px;">✍️ BƯỚC 1B: NHẬP ĐÁP ÁN ĐÚNG (NẾU CHƠI TỰ LUẬN):</b>
-            <input type="text" id="input-correct-short" placeholder="Gõ từ khóa chính xác vào đây..." style="margin-top: 5px;">
+            <b style="color: #2980b9; display:block; margin-top:10px;">HOẶC NHẬP ĐÁP ÁN ĐÚNG (NẾU CHƠI TỰ LUẬN):</b>
+            <input type="text" id="input-correct-short" placeholder="Gõ từ khóa chính xác..." style="margin-top: 5px;">
 
-            <hr style="border: 0; border-top: 1px dashed #ccc; margin: 15px 0;">
-
-            <b style="color: #8e44ad; font-size: 15px;">📢 BƯỚC 2: CÔNG BỐ KẾT QUẢ & ĐIỀU KHIỂN TRÌNH CHIẾU:</b>
-            <div class="display-controls">
-                <button id="btn-trigger-reveal" class="btn-show-display" onclick="sendRevealCommand()">👁️ SHOW ĐÁP ÁN LÊN DISPLAY</button>
-                <button id="btn-toggle-stats" class="btn-show-stats" onclick="toggleDisplayStats()">🏆 SHOW BẢNG TỔNG ĐIỂM / TIME</button>
-            </div>
+            <b style="color: #8e44ad; display:block; margin-top:15px;">BƯỚC 2: CÔNG BỐ KẾT QUẢ RA MÀN HÌNH CHÍNH:</b>
+            <button style="background: #9b59b6; margin-top: 5px;" onclick="sendRevealCommand()">👁️ SHOW ĐÁP ÁN LÊN DISPLAY</button>
         </div>
 
-        <h3>Thí sinh (<span id="player-count">0</span>)</h3>
+        <h3>Thí sinh đang kết nối (<span id="player-count">0</span>)</h3>
         <div class="player-list" id="players-display"></div>
     </div>
 
-    <div class="modal-overlay" id="history-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modal-player-title" style="margin:0;">Lịch sử trả lời</h3>
-                <span class="modal-close" onclick="closeHistoryModal()">&times;</span>
-            </div>
-            <div id="modal-history-body" style="overflow-x:auto;"></div>
-        </div>
-    </div>
-
     <script>
-        const channel = new BroadcastChannel('quiz_score_engine_channel');
+        const socket = io();
         let playersMap = {}; 
         let currentMode = 'MCQ'; 
         let countdownInterval = null;
         let currentMaxDuration = 15;
         let currentMaxScore = 100;
         let finalCorrectAnswer = '';
-        let isDisplayShowingStats = false; 
-        let questionCounter = 0;
         let isQuizRunning = false;
 
-        setInterval(() => { 
-            channel.postMessage({ type: 'CONTROLLER_PING' }); 
+        // Định kỳ gửi dữ liệu đồng bộ (Phòng trường hợp Admin thay đổi sửa điểm bằng tay)
+        setInterval(() => {
             if (!isQuizRunning) {
-                channel.postMessage({ type: 'SYNC_DISPLAY_DATA', players: playersMap, showStatsMode: isDisplayShowingStats });
+                socket.emit('ADMIN_SYNC_PLAYERS', { players: playersMap });
             }
-        }, 600);
+        }, 1000);
 
         function startQuiz() {
             clearInterval(countdownInterval);
             isQuizRunning = true;
             finalCorrectAnswer = '';
             document.getElementById('input-correct-short').value = '';
-            
-            isDisplayShowingStats = false;
-            document.getElementById('btn-toggle-stats').classList.remove('active-mode');
-            document.getElementById('btn-toggle-stats').innerText = "🏆 SHOW BẢNG TỔNG ĐIỂM / TIME";
 
             currentMode = document.getElementById('input-quiz-type').value;
             const question = document.getElementById('input-question').value;
-            questionCounter++; 
             currentMaxDuration = parseInt(document.getElementById('input-timer').value) || 15;
             currentMaxScore = parseFloat(document.getElementById('input-question-score').value) || 100;
-
-            let answers = {
-                A: document.getElementById('ans-A').value,
-                B: document.getElementById('ans-B').value,
-                C: document.getElementById('ans-C').value,
-                D: document.getElementById('ans-D').value
-            };
 
             for (let p in playersMap) { 
                 playersMap[p].answer = 'Chưa trả lời'; 
@@ -187,14 +115,10 @@
             }
             updateControllerUI();
 
-            const timestamp = Date.now(); 
-            channel.postMessage({ 
-                type: 'START_QUIZ', 
+            socket.emit('START_QUIZ', { 
                 mode: currentMode, 
-                question: question,
-                answers: answers,
-                duration: currentMaxDuration, 
-                timestamp: timestamp 
+                question: question, 
+                duration: currentMaxDuration 
             });
 
             let timeLeft = currentMaxDuration;
@@ -216,16 +140,13 @@
             isQuizRunning = false;
             document.getElementById('control-timer').innerText = "🛑 HẾT GIỜ - ĐÃ KHÓA ĐÁP ÁN!";
             document.getElementById('btn-start-quiz').disabled = false;
-            channel.postMessage({ type: 'TIME_UP', duration: currentMaxDuration });
-            setTimeout(() => {
-                channel.postMessage({ type: 'SYNC_DISPLAY_DATA', players: playersMap, showStatsMode: isDisplayShowingStats });
-            }, 200);
+            socket.emit('TIME_UP', { duration: currentMaxDuration });
         }
 
         function selectMcqAnswer(key) {
             if(isQuizRunning) endQuizSession();
             finalCorrectAnswer = key;
-            document.getElementById('control-timer').innerText = `🎯 Đã chọn Trắc nghiệm [ ${key} ]. Hãy nhấn nút SHOW màu tím!`;
+            document.getElementById('control-timer').innerText = `🎯 Đã chọn đáp án đúng: [ ${key} ]`;
         }
 
         function sendRevealCommand() {
@@ -234,20 +155,20 @@
             let finalAns = '';
 
             if (currentMode === 'MCQ') {
-                if (!finalCorrectAnswer) { alert("Vui lòng chọn phương án đúng A, B, C hoặc D trước!"); return; }
+                if (!finalCorrectAnswer) { alert("Chưa chọn đáp án trắc nghiệm đúng!"); return; }
                 finalAns = finalCorrectAnswer;
             } else {
-                const textAns = document.getElementById('input-correct-short').value.trim();
-                if (!textAns) { alert("Vui lòng nhập từ khóa tự luận đúng ở Bước 1B!"); return; }
-                finalAns = textAns;
+                finalAns = document.getElementById('input-correct-short').value.trim();
+                if (!finalAns) { alert("Chưa điền đáp án tự luận đúng!"); return; }
             }
 
-            for(let name in playersMap) {
+            // Tính điểm cộng dồn cho thí sinh trả lời đúng và đã khóa đáp án
+            for (let name in playersMap) {
                 let p = playersMap[name];
-                if(p.isEliminated) continue;
+                if (p.isEliminated) continue;
 
                 let isRight = false;
-                if(currentMode === 'MCQ') {
+                if (currentMode === 'MCQ') {
                     isRight = (p.answer === finalAns);
                 } else {
                     isRight = (p.answer.toLowerCase().trim() === finalAns.toLowerCase().trim());
@@ -256,167 +177,77 @@
                 let currentPoints = isRight && p.isLocked ? parseFloat(p.calculatedScore || 0) : 0;
                 let currentSecs = p.isLocked && p.timeTaken ? parseFloat(p.timeTaken) : 0;
 
-                let oldScore = parseFloat(p.totalScore || 0);
-                let oldTime = parseFloat(p.totalTime || 0);
-
-                p.totalScore = (oldScore + currentPoints).toFixed(2);
-                p.totalTime = (oldTime + currentSecs).toFixed(2);
+                p.totalScore = (parseFloat(p.totalScore || 0) + currentPoints).toFixed(2);
+                p.totalTime = (parseFloat(p.totalTime || 0) + currentSecs).toFixed(2);
             }
 
-            saveQuestionHistory(finalAns);
-
-            channel.postMessage({ type: 'COMMAND_DISPLAY_REVEAL', correctAns: finalAns, mode: currentMode, players: playersMap });
-            channel.postMessage({ type: 'SHOW_RESULT', correctAns: finalAns });
+            socket.emit('COMMAND_DISPLAY_REVEAL', { correctAns: finalAns, mode: currentMode, players: playersMap });
             document.getElementById('control-timer').innerText = `🎉 ĐÃ SHOW ĐÁP ÁN [ ${finalAns} ]!`;
             updateControllerUI();
         }
 
-        function toggleDisplayStats() {
-            isDisplayShowingStats = !isDisplayShowingStats;
-            const btn = document.getElementById('btn-toggle-stats');
-            if(isDisplayShowingStats) {
-                btn.classList.add('active-mode');
-                btn.innerText = "📺 ĐANG SHOW BẢNG ĐIỂM & BXH (TẮT)";
-            } else {
-                btn.classList.remove('active-mode');
-                btn.innerText = "🏆 SHOW BẢNG TỔNG ĐIỂM / TIME";
-            }
-            channel.postMessage({ type: 'SYNC_DISPLAY_DATA', players: playersMap, showStatsMode: isDisplayShowingStats });
+        function updateScoreManual(name, val) {
+            if (playersMap[name]) playersMap[name].totalScore = parseFloat(val || 0).toFixed(2);
         }
 
-        function saveQuestionHistory(correctAns) {
-            let qName = `Phiên số ${questionCounter}`;
-            for(let name in playersMap) {
-                let p = playersMap[name];
-                if(p.isEliminated) continue;
-
-                let isRight = false;
-                if(currentMode === 'MCQ') {
-                    isRight = (p.answer === correctAns);
-                } else {
-                    isRight = (p.answer.toLowerCase().trim() === correctAns.toLowerCase().trim());
-                }
-
-                if(!p.history) p.history = [];
-                let exist = p.history.some(h => h.question === qName);
-                if(!exist) {
-                    p.history.push({
-                        question: qName,
-                        playerAns: p.answer,
-                        correctAns: correctAns,
-                        isCorrect: isRight,
-                        timeTaken: p.timeTaken ? p.timeTaken + 's' : '❌'
-                    });
-                }
-            }
+        function kickPlayer(name) {
+            if (playersMap[name]) { playersMap[name].isEliminated = true; playersMap[name].answer = 'BỊ LOẠI'; updateControllerUI(); }
         }
 
-        function showHistory(name) {
-            const p = playersMap[name];
-            document.getElementById('modal-player-title').innerText = ` Lịch sử: ${name}`;
-            const body = document.getElementById('modal-history-body');
-            
-            if(!p.history || p.history.length === 0) {
-                body.innerHTML = `<p style="color:#7f8c8d; font-style:italic; text-align:center; padding:20px 0;">Thí sinh chưa có lịch sử câu hỏi nào.</p>`;
-            } else {
-                let html = `<table class="history-table">
-                    <thead><tr><th>Phiên chơi</th><th>Đã chốt</th><th>Đáp án đúng</th><th>Kết quả</th><th>Thời gian</th></tr></thead>
-                    <tbody>`;
-                p.history.forEach(h => {
-                    html += `<tr>
-                        <td><b>${h.question}</b></td>
-                        <td><mark style="padding:2px 5px;">${h.playerAns}</mark></td>
-                        <td>${h.correctAns}</td>
-                        <td class="${h.isCorrect ? 'hist-correct' : 'hist-wrong'}">${h.isCorrect ? '✓ ĐÚNG' : '✕ SAI'}</td>
-                        <td><code>${h.timeTaken}</code></td>
-                    </tr>`;
-                });
-                html += `</tbody></table>`;
-                body.innerHTML = html;
-            }
-            document.getElementById('history-modal').style.display = 'flex';
+        function revivePlayer(name) {
+            if (playersMap[name]) { playersMap[name].isEliminated = false; playersMap[name].answer = 'Chưa trả lời'; updateControllerUI(); }
         }
 
-        function closeHistoryModal() { document.getElementById('history-modal').style.display = 'none'; }
-        function kickPlayer(name) { if(playersMap[name]) { playersMap[name].isEliminated = true; playersMap[name].answer = 'Bị Loại ☠️'; updateControllerUI(); } }
-        function revivePlayer(name) { if(playersMap[name]) { playersMap[name].isEliminated = false; playersMap[name].answer = 'Chưa trả lời'; updateControllerUI(); } }
-        function updatePlayerStatsManual(name, field, value) { if (playersMap[name]) { playersMap[name][field] = value; } }
-
-        channel.onmessage = (event) => {
-            const data = event.data;
-            if (data.type === 'PLAYER_JOIN') {
-                if (!playersMap[data.name]) {
-                    playersMap[data.name] = { 
-                        answer: 'Chưa trả lời', isLocked: false, timeTaken: null, calculatedScore: 0, isEliminated: false,
-                        totalScore: '0', totalTime: '0', history: []
-                    };
+        socket.on('SYNC_DATA_FROM_SERVER', (data) => {
+            if (data.players) {
+                // Nhận cập nhật từ các máy con gửi lên server trung gian
+                for (let n in data.players) {
+                    if (!playersMap[n]) {
+                        playersMap[n] = data.players[n];
+                    } else {
+                        playersMap[n].answer = data.players[n].answer;
+                        playersMap[n].isLocked = data.players[n].isLocked;
+                        playersMap[n].timeTaken = data.players[n].timeTaken;
+                        playersMap[n].calculatedScore = data.players[n].calculatedScore;
+                        playersMap[n].isEliminated = data.players[n].isEliminated;
+                    }
                 }
                 updateControllerUI();
-            } else if (data.type === 'PLAYER_SUBMIT') {
-                if (playersMap[data.name] && !playersMap[data.name].isEliminated) {
-                    playersMap[data.name].answer = data.answer; 
-                    playersMap[data.name].isLocked = data.isLocked;
-                    playersMap[data.name].timeTaken = parseFloat(data.timeTaken || 0).toFixed(2); 
-                    
-                    if(data.isLocked) {
-                        let ratio = 1 - (parseFloat(data.timeTaken) / currentMaxDuration);
-                        if (ratio < 0) ratio = 0; 
-                        playersMap[data.name].calculatedScore = (ratio * currentMaxScore).toFixed(2);
-                    } else {
-                        playersMap[data.name].calculatedScore = 0;
-                    }
-                    updateControllerUI();
-                }
             }
-        };
+        });
 
         function updateControllerUI() {
             const listContainer = document.getElementById('players-display');
-            const activeId = document.activeElement ? document.activeElement.id : null;
             listContainer.innerHTML = '';
-            let totalPlayers = 0;
+            let count = 0;
 
             for (let name in playersMap) {
-                totalPlayers++;
+                count++;
                 const p = playersMap[name];
                 const item = document.createElement('div');
                 item.className = `player-item ${p.isEliminated ? 'eliminated-row' : ''}`;
                 
                 let badgeStyle = p.isEliminated ? "background:#c0392b" : (p.answer !== 'Chưa trả lời' ? "background:#2ecc71" : "background:#7f8c8d");
-                let statusIcon = p.isLocked ? `<span class="status-badge status-lock">🔒 Đã Chốt</span>` : `<span class="status-badge status-typing">✍️ Nhập...</span>`;
+                let statusIcon = p.isLocked ? `<span class="status-badge status-lock">🔒 Chốt</span>` : `<span class="status-badge status-typing">✍️ Sửa...</span>`;
                 if (p.answer === 'Chưa trả lời' || p.isEliminated) statusIcon = '';
 
                 let actionArea = p.isEliminated 
                     ? `<button class="btn-revive" onclick="revivePlayer('${name}')">❤️ Hồi sinh</button>` 
                     : `<button class="btn-kick" onclick="kickPlayer('${name}')">💥 Loại</button>`;
 
-                const scoreInputId = `score-${name.replace(/\s+/g, '_')}`;
-                const timeInputId = `time-${name.replace(/\s+/g, '_')}`;
-
                 item.innerHTML = `
                     <div class="player-info">
-                        <span class="player-name-text">👤 ${name} ${p.isEliminated ? '<b>(LOẠI)</b>' : statusIcon}</span>
-                        ${!p.isEliminated && p.answer !== 'Chưa trả lời' ? `<span class="time-elapsed">⏱️ Lúc: ${p.timeTaken}s | 🎯 Tính: ${p.calculatedScore}đ</span>` : ''}
-                    </div>
-                    <div class="player-edit-inputs">
-                        <div>
-                            <label>Tổng Điểm</label>
-                            <input type="text" id="${scoreInputId}" class="input-stat-edit" value="${p.totalScore ?? '0'}" oninput="updatePlayerStatsManual('${name}', 'totalScore', this.value)">
-                        </div>
-                        <div>
-                            <label>Tổng Time</label>
-                            <input type="text" id="${timeInputId}" class="input-stat-edit" value="${p.totalTime ?? '0'}" oninput="updatePlayerStatsManual('${name}', 'totalTime', this.value)">
-                        </div>
+                        <span class="player-name-text">👤 ${name} ${statusIcon}</span>
+                        ${!p.isEliminated && p.answer !== 'Chưa trả lời' ? `<span class="time-elapsed">⏱️ ${p.timeTaken}s | 🎯 Tạm tính: ${p.calculatedScore}đ</span>` : ''}
+                        <span style="font-size:12px; color:#555;">Tổng Điểm: <input type="number" class="input-score-edit" value="${p.totalScore || 0}" oninput="updateScoreManual('${name}', this.value)">đ</span>
                     </div>
                     <div class="action-btns">
-                        <button class="btn-history" onclick="showHistory('${name}')">📜 Lịch sử</button>
                         <span class="badge" style="${badgeStyle}">${p.answer}</span>
                         ${actionArea}
                     </div>`;
                 listContainer.appendChild(item);
             }
-            document.getElementById('player-count').innerText = totalPlayers;
-            if (activeId) { const el = document.getElementById(activeId); if (el) el.focus(); }
+            document.getElementById('player-count').innerText = count;
         }
     </script>
 </body>

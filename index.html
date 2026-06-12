@@ -100,7 +100,6 @@
                 if (timeIsOverGlobal) return; 
                 if (document.getElementById('player-action-area').style.display === 'block') {
                     if (!isAnswerLocked) { lockAnswerFinal(); } 
-                    else { unlockAnswerToEdit(); }
                 }
             }
         });
@@ -163,28 +162,38 @@
                 document.getElementById('player-action-area').style.display = 'block';
                 document.getElementById('btn-lock-answer').style.display = 'inline-block';
                 document.getElementById('btn-unlock-answer').style.display = 'none';
-                document.getElementById('display-question').innerText = data.question || "Vui lòng nhìn lên màn hình chính...";
+                
+                // Hiển thị nội dung text câu hỏi nếu controller truyền qua
+                if(data.question) {
+                    document.getElementById('display-question').innerText = data.question;
+                }
+
+                // Cập nhật text nhãn của các nút đáp án trắc nghiệm nếu có dữ liệu truyền qua
+                if(currentMode === 'MCQ' && data.answers) {
+                    document.getElementById('btn-ans-A').innerText = `A: ${data.answers.A || ''}`;
+                    document.getElementById('btn-ans-B').innerText = `B: ${data.answers.B || ''}`;
+                    document.getElementById('btn-ans-C').innerText = `C: ${data.answers.C || ''}`;
+                    document.getElementById('btn-ans-D').innerText = `D: ${data.answers.D || ''}`;
+                }
 
                 const txtInput = document.getElementById('player-text-input');
                 txtInput.classList.remove('locked');
                 txtInput.readOnly = false;
 
                 resetMCQButtonStyles();
-                document.querySelectorAll('.btn-ans').forEach(btn => {
-                    btn.classList.remove('fade-out');
-                });
+                document.querySelectorAll('.btn-ans').forEach(btn => btn.classList.remove('fade-out'));
 
                 if (currentMode === 'MCQ') {
                     document.getElementById('player-mcq-box').style.display = 'grid';
                     document.getElementById('player-text-box').style.display = 'none';
-                    document.getElementById('player-status').innerText = "Nhìn màn hình chính, chọn đáp án rồi bấm CHỐT!";
+                    document.getElementById('player-status').innerText = "Chọn đáp án rồi bấm CHỐT ĐÁP ÁN!";
                     enableMCQButtons(true);
                 } else {
                     document.getElementById('player-mcq-box').style.display = 'none';
                     document.getElementById('player-text-box').style.display = 'block';
                     txtInput.value = '';
                     txtInput.focus();
-                    document.getElementById('player-status').innerText = "Gõ câu trả lời rồi nhấn Enter để Chốt.";
+                    document.getElementById('player-status').innerText = "Gõ câu trả lời rồi nhấn nút chốt hoặc nhấn phím Enter.";
                 }
                 
                 startPlayerTimer(data.duration);
@@ -203,12 +212,14 @@
 
                 if (currentMode === 'MCQ') {
                     document.querySelectorAll('.btn-ans').forEach(btn => {
-                        const option = btn.id.replace('btn-ans-', '');
+                        const option = btn.id.replace('btn-ans-', '').substring(0, 1);
                         if (option === chosen) {
                             if (chosen === correct) {
                                 document.getElementById('player-status').innerText = `🎉 CHÍNH XÁC! Bạn trả lời đúng trong ${savedTimeTaken}s.`;
+                                btn.style.backgroundColor = "#27ae60"; 
                             } else {
                                 document.getElementById('player-status').innerText = `❌ SAI RỒI! Bạn chọn ${chosen} | Đáp án: ${correct}.`;
+                                btn.style.backgroundColor = "#c0392b"; 
                             }
                         }
                         if (option !== correct && option !== chosen) {
@@ -243,12 +254,12 @@
         }
 
         function lockAnswerFinal() {
-            if(iamEliminated) return;
+            if(iamEliminated || timeIsOverGlobal) return;
             if (currentMode === 'SHORT_ANS') {
                 playerTempAnswer = document.getElementById('player-text-input').value.trim();
             }
             if (!playerTempAnswer) {
-                alert("Vui lòng chọn hoặc nhập đáp án trước khi chốt!");
+                alert("Vui lòng nhập/chọn phương án trước khi chốt!");
                 return;
             }
             isAnswerLocked = true;
@@ -267,7 +278,7 @@
                 txtInput.classList.add('locked');
                 txtInput.blur(); 
                 document.getElementById('btn-lock-answer').style.display = 'none';
-                document.getElementById('btn-unlock-answer').style.display = 'none';
+                document.getElementById('btn-unlock-answer').style.display = 'inline-block';
             }
 
             document.getElementById('player-status').innerText = `🔒 Đã CHỐT ĐÁP ÁN (${savedTimeTaken}s)!`;
@@ -283,13 +294,15 @@
                 enableMCQButtons(true);
                 document.getElementById('btn-lock-answer').style.display = 'inline-block';
                 document.getElementById('btn-unlock-answer').style.display = 'none';
-                document.getElementById('player-status').innerText = "Đã mở khóa. Chọn lại phương án rồi bấm Chốt.";
+                document.getElementById('player-status').innerText = "Đã mở khóa. Chọn lại rồi bấm Chốt.";
             } else {
                 const txtInput = document.getElementById('player-text-input');
                 txtInput.readOnly = false;
                 txtInput.classList.remove('locked');
                 txtInput.focus(); 
-                document.getElementById('player-status').innerText = "Đã sửa... Nhấn tiếp Enter để lưu chốt.";
+                document.getElementById('player-status').innerText = "Đã sửa... Hãy nhấn tiếp nút Chốt Đáo Án.";
+                document.getElementById('btn-lock-answer').style.display = 'inline-block';
+                document.getElementById('btn-unlock-answer').style.display = 'none';
             }
 
             let sendVal = playerTempAnswer ? playerTempAnswer : "Chưa trả lời";
@@ -301,25 +314,22 @@
             timeIsOverGlobal = true;
             clearInterval(countdownInterval);
 
-            if (isAnswerLocked) {
-                channel.postMessage({ type: 'PLAYER_SUBMIT', name: myName, answer: playerTempAnswer ? playerTempAnswer : "Không trả lời", isLocked: true, timeTaken: savedTimeTaken });
-                return; 
-            }
-
-            isAnswerLocked = true;
             enableMCQButtons(false);
             const txtInput = document.getElementById('player-text-input');
             txtInput.readOnly = true;
             txtInput.classList.add('locked');
             document.getElementById('player-action-area').style.display = 'none'; 
-            
+            document.getElementById('player-timer').innerText = "00s";
+
+            if (isAnswerLocked) return; 
+
+            isAnswerLocked = true;
             const sessionDuration = (Date.now() - startThinkingTime) / 1000;
             totalTimeAccumulated += sessionDuration;
             savedTimeTaken = parseFloat(maxDuration).toFixed(2); 
 
             let finalAns = playerTempAnswer ? playerTempAnswer : "Không trả lời";
-            document.getElementById('player-status').innerText = `🛑 HẾT GIỜ! Bạn chọn: ${finalAns}.`;
-            document.getElementById('player-timer').innerText = "00s";
+            document.getElementById('player-status').innerText = `🛑 HẾT GIỜ! Hệ thống nhận phương án: ${finalAns}.`;
 
             channel.postMessage({ type: 'PLAYER_SUBMIT', name: myName, answer: finalAns, isLocked: true, timeTaken: savedTimeTaken });
         }
@@ -340,7 +350,13 @@
         }
 
         function enableMCQButtons(status) { document.querySelectorAll('.btn-ans').forEach(btn => btn.disabled = !status); }
-        function resetMCQButtonStyles() { document.querySelectorAll('.btn-ans').forEach(btn => btn.classList.remove('selected')); }
+        function resetMCQButtonStyles() { 
+            document.getElementById('btn-ans-A').style.backgroundColor = '#e74c3c';
+            document.getElementById('btn-ans-B').style.backgroundColor = '#3498db';
+            document.getElementById('btn-ans-C').style.backgroundColor = '#2ecc71';
+            document.getElementById('btn-ans-D').style.backgroundColor = '#f1c40f';
+            document.querySelectorAll('.btn-ans').forEach(btn => btn.classList.remove('selected')); 
+        }
     </script>
 </body>
 </html>
